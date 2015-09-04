@@ -1,0 +1,173 @@
+
+Magnetotelluric data file J-format: 
+
+A.G. Jones; 5 October 1994
+
+version: 2.0
+
+-------------------------------------------------------------------------------
+
+A file of MT data responses consists of a COMMENT BLOCK, followed by an
+INFORMATION BLOCK, followed by one or more DATA BLOCKs for that site.
+
+-------------------------------------------------------------------------------
+
+COMMENT BLOCK:
+==============
+
+At the beginning of a data file, as many comment lines as required can be
+written. Each line must begin with the hash (#) mark. None of this information
+is required or read by the reading routine.
+
+Example:-
+
+# MT & GDS estimates from LIMS codes version: v3.1
+#
+# Site info: Phoenix site 401    
+# Ex length:  133
+# Ey length:  135
+# Ex azimuth:  12 True North
+# Ey azimuth:  102 True North
+# Hx azimuth:  12 True North
+# Coherence minimum:   0.650000
+# Coherence maximum:   0.990000
+# Maxtype:JKN
+# Ntype:  1
+# Weight: Y
+#
+
+
+-------------------------------------------------------------------------------
+
+INFORMATION BLOCK:
+==================
+
+This block contains information about the site co-ordinates and site 
+orientation. Each line must begin with a"greater-than" (>) sign, followed
+by a recognizes keyword. After the keyword must be an equals (=) sign,
+followed by the numeric value.
+
+The following keywords are currently supported:-
+
+AZIMUTH               the orientation of the "X"-direction of the responses
+LATITUDE              site latitude  in degrees and decimals
+LONGITUDE             site longitude in degrees and decimals
+ELEVATION             site elevation in metres
+
+
+Example:-
+
+>AZIMUTH   =        45.0
+>LATITUDE  =     57.7517
+>LONGITUDE =   -103.9600
+>ELEVATION =         0.0
+
+
+
+-------------------------------------------------------------------------------
+
+DATA BLOCK:
+
+The data block follows the comment and information blocks. The data block
+contains the site responses in a variety of formats (either apparent 
+resistivities and phases, or impedances - if impedances then units must be
+specified).
+
+
+MT data responses are stored in the following format:
+
+
+RECORD     ENTRY        FORMAT    DESCRIPTION
+
+Record   1:XXX001         A6      6 alphanumeric STATION NAME (case insensitive)
+                                    survey XXX, station 001
+                          
+Record   2:RXY            A3      3 alphanumeric DATA TYPE (case insensitive)
+
+                                  1st character must be:
+                                  R - apparent resistivities and phases
+                                  S - as "R" but upward-biased estimates
+                                  Z - impedances
+                                  Q - as "Z" but upward biased estimates
+                                  C - "Z" expressed as Schmucker C function
+                                  T - GDS transfer functions
+
+                                  2nd/3rd characters can be
+                                  XX - xx MT impedance element
+                                  XY - xy MT impedance element
+                                  YX - yx MT impedance element
+                                  YY - yy MT impedance element
+                                  TE - TE MT impedance element
+                                  TM - TM MT impedance element
+                                  AV - Berdichevsky average
+                                  DE - determinant average
+                                  ZX - Tzx transfer function
+                                  ZY - Tzy transfer function
+                                  Convention:
+                                  The convention used is for RXY to represent
+                                  the E-polarization (TE) mode, and for RYX
+                                  to represent the B-polarization mode.
+
+If the data are stored as impedances, then the units must be specified 
+following the data type code. The two keywords are either "SI", for units
+of ohms, or "field", for units of mV/km/nT. The preferred usage is ohms.
+The following two examples are permitted:-
+ZXX SI units (ohms)
+ZXX field units (mV/km/nT)
+Only the keywords "SI" and "field" are used. The other words are for 
+clarification and confirmation.
+
+
+Record   3: n            1I(free) number of points to follow
+
+For data type=R??        9F(free)
+Record   4: period(1), rho, pha, rhomax, rhomin, phamax, phamin, wrho, wpha
+.        . 
+Record 4+n: period(n), rho, pha, rhomax, rhomin, phamax, phamin, wrho, wpha
+
+            period: period in s, if negative then is frequency in Hz
+            rho   : apparent resistivity, if negative then rejected
+            pha   : phase in degrees
+            rhomax: rho + 1 standard error
+            rhomin: rho - 1 standard error
+            phamax: pha + 1 standard error
+            phamin: pha - 1 standard error
+            wrho  : weight for rho, if <0 then rejected
+            wpha  : weight for phase
+            -999. : missing data marker
+
+The GSC responses are stored after the above in the following format:
+
+Record   4: period(1), real, imag, error, weight
+.        . 
+Record 4+n: period(n), real, imag, error, weight
+
+            period: period in s, if negative then is frequency in Hz
+            real  : real part of the transfer function
+            imag  : imaginary part of the transfer function
+            error : standard error
+            weight: weight (Note: some weights are in error!)
+            -999. : missing data marker
+
+Record 4+n+1: Repeat of 2 - 4+n for a different type from the same station
+              Note: each type can have differing "n", but for MTREAD to
+              construct RAV and RDE correctly, there must be the same
+              number of periods in the same order for each of the two or
+              four types respectively.
+
+
+
+
+Example:-
+
+PCSE04 
+RXY
+          40
+0.2604E-02 -18.52       50.3  19.67      17.41       52.0   48.5    0.93    0.93
+0.3472E-02  12.39       54.7  12.84      11.96       55.8   53.7    0.97    0.97
+0.5208E-02  13.58       53.6  14.76      12.46       56.0   51.2    0.87    0.87
+0.6944E-02  14.53       54.5  14.93      14.13       55.3   53.7    0.94    0.94
+0.1042E-01  14.70       58.4  15.47      13.96       59.8   56.9    0.90    0.90
+0.1389E-01 -999.0     -999.0 -999.0     -999.0     -999.0 -999.0 -999.00 -999.00
+0.2083E-01  11.56       61.4  11.96      11.17       62.4   60.4    0.92    0.92
+0.2778E-01  9.311       59.6  9.591      9.036       60.5   58.8    0.92    0.92
