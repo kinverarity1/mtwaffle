@@ -17,11 +17,7 @@ logger = logging.getLogger(__name__)
 
 RAD2DEG = 180 / np.pi
 
-
-class AttrDict(dict):
-    def __init__(self, *args, **kwargs):
-        super(AttrDict, self).__init__(*args, **kwargs)
-        self.__dict__ = self
+from utils import AttrDict
 
 
 def show_indices(arr):
@@ -363,7 +359,7 @@ def sites_data(sites, phase_func=phase):
         data.append(site_data(site, phase_func=phase_func))
     return data
 
-def calc_basic_props(freqs, zs, phase_func=phase):
+def calc_basic_props(freqs, zs, phase_func=phase, fillAttrDict=None):
     '''Calculate the basic properties of the MT impedance.
 
     Arguments:
@@ -375,7 +371,10 @@ def calc_basic_props(freqs, zs, phase_func=phase):
     keys, etc.
 
     '''
-    sd = AttrDict()
+    if fillAttrDict is None:
+        sd = AttrDict()
+    else:
+        sd = fillAttrDict
     sd["freqs"] = freqs
     sd["zs"] = zs
     res = appres(sd['freqs'], sd['zs'])

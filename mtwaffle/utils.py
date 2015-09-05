@@ -1,6 +1,13 @@
+import os
 import json
 
 import numpy as np
+
+
+class AttrDict(dict):
+    def __init__(self, *args, **kwargs):
+        super(AttrDict, self).__init__(*args, **kwargs)
+        self.__dict__ = self
 
 
 class NumpyJSONEncoder(json.JSONEncoder):
@@ -93,7 +100,10 @@ def read_json(fo, **kwargs):
     converts all the Unicode strings back into ASCII.
 
     '''
+    if isinstance(fo, basestring) and os.path.isfile(fo):
+        fo = open(fo, mode="r")
     kwargs.setdefault('encoding', 'ascii')
     jsondict = json.load(fo, **kwargs)
+    fo.close()
     resurrect_complex(jsondict)
-    return convert_keys_to_string(jsondict)
+    return AttrDict(convert_keys_to_string(jsondict))
