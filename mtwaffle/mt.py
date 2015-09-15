@@ -375,8 +375,8 @@ def calc_basic_props(freqs, zs, phase_func=phase, fillAttrDict=None):
         sd = AttrDict()
     else:
         sd = fillAttrDict
-    sd["freqs"] = freqs
-    sd["zs"] = zs
+    sd["freqs"] = np.asarray(freqs)
+    sd["zs"] = np.asarray(zs)
     res = appres(sd['freqs'], sd['zs'])
     phase = phase_func(sd['zs'])
     for key, indices in zip(('xx', 'xy', 'yx', 'yy'), ([0, 0], [0, 1], [1, 0], [1, 1])):
