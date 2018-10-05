@@ -17,11 +17,10 @@ logger = logging.getLogger(__name__)
 
 RAD2DEG = 180 / np.pi
 
-from mtwaffle.utils import AttrDict
-
 
 
 class Site(attrdict.AttrDict):
+
     index_map = {
         'xx': [0, 0],
         'xy': [0, 1],
@@ -76,42 +75,48 @@ class Site(attrdict.AttrDict):
         else:
             return value
 
+    def plot_res_phase(self, **kwargs):
+        from mtwaffle import graphs
+        args = (
+            (self.freqs, self.freqs),
+            (self.res_xy, self.res_yx),
+            (self.phase_xy, self.phase_yx),
+        )
+        if not 'res_indiv_kws' in kwargs:
+            kwargs['res_indiv_kws'] = (
+                {'label': 'xy', 'color': 'b'},
+                {'label': 'yx', 'color': 'g'},
+            )
+        return graphs.plot_res_phase(*args, **kwargs)
 
+    def plot_impedance_tensors(self, **kwargs):
+        from mtwaffle import graphs
+        return graphs.plot_impedance_tensors(
+            self.zs, self.freqs, **kwargs)
 
-    # def sd_asarr(sitesd, key='res_xy', imshowtr=False):
-    #     arr = np.empty((len(sitesd), len(sitesd[0]['freqs'])))
-    #     for si, site in enumerate(sitesd):
-    #         for fi, freq in enumerate(site['freqs']):
-    #             arr[si, fi] = site[key][fi]
-    #     if imshowtr:
-    #         arr = np.flipud(arr.T)
-    #     return arr
+    def plot_ptensell(self, **kwargs):
+        from mtwaffle import graphs
+        return graphs.plot_ptensell(
+            self.ptens, self.freqs, **kwargs
+        )
 
+    def plot_ptensell_filled(self, **kwargs):
+        from mtwaffle import graphs
+        return graphs.plot_ptensell_filled(
+            self.ptens, self.freqs, **kwargs
+        )
 
-    # def freq_lims(rd, names=None):
-    #     '''From dictionary of sites, return min and max frequencies.'''
-    #     f1 = 1e10
-    #     f0 = 1e-10
-    #     for name, sd in rd.items():
-    #         if names:
-    #             if not name in names:
-    #                 continue
-    #         if 'freqs' in sd:
-    #             if min(sd['freqs']) > f0:
-    #                 f0 = min(sd['freqs'])
-    #             if max(sd['freqs']) < f1:
-    #                 f1 = max(sd['freqs'])
-    #     return f0, f1
+    def plot_mohr_imp(self, **kwargs):
+        from mtwaffle import graphs
+        return graphs.plot_mohr_imp(
+            self.freqs, self.zs, **kwargs
+        )
 
-
-    # def rot_sd(sd, theta):
-    #     '''Given dictionary of sites, rotate by theta degrees.'''
-    #     sd2 = {}
-    #     for name, s in sd.items():
-    #         d = {'freqs': s['freqs'], 'zs': rot_arr(s['zs'], theta)}
-    #         sd2[name] = site_data(d)
-    #     return sd2
-
+    def plot_mohr_ptensor(self, **kwargs):
+        from mtwaffle import graphs
+        return graphs.plot_mohr_ptensor(
+            self.freqs, self.ptens, **kwargs
+        )
 
 
 

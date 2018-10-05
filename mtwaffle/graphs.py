@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 
-def plot_res_phase2(freqs, Zs, phase_func=mt.phase, **kwargs):
+def plot_res_phase2(freqs, Zs, phase_func=None, **kwargs):
     """Quick wrapper for plotting the two modes resistivity and phase.
 
     Args:
@@ -24,6 +24,9 @@ def plot_res_phase2(freqs, Zs, phase_func=mt.phase, **kwargs):
 
     """
     res = mt.appres(freqs, Zs)
+    if phase_func is None:
+        from mtwaffle import mt
+        phase_func = mt.phase
     phase = phase_func(Zs)
     res_indiv_kws = kwargs.get("res_indiv_kws", [{}, {}])
     res_indiv_kws[0].update({"label": "xy", "color": "b"})
