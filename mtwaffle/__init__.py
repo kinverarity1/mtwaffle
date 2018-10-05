@@ -1,6 +1,6 @@
-from mt import *
+from mtwaffle.mt import *
 
-from edi import read_edi, write_edi
-from utils import read_json, write_json, AttrDict
+from mtwaffle.edi import read_edi, write_edi
+from mtwaffle.utils import read_json, write_json, AttrDict
 
 __version__ = "0.1"

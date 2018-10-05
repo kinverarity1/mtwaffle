@@ -1,9 +1,14 @@
+import logging
 import textwrap
+import traceback
 
 import numpy as np
 
-import mt
-import utils
+from mtwaffle import mt
+from mtwaffle import utils
+
+
+logger = logging.getLogger(__name__)
 
 EDI_TEMPLATE = ''' >HEAD
 
@@ -90,10 +95,11 @@ def read_edi(fn, sd=True, **kws):
     mt.site_data().
     '''
     freqs, zs, zes = read_edi_file(fn, **kws)
-    data = utils.AttrDict(dict(freqs=freqs, zs=zs, zes=zes))
     if sd:
-        mt.calc_basic_props(freqs, zs, data)
-    return data      
+        data = mt.calc_basic_props(freqs, zs)
+    else:
+        data = utils.AttrDict(dict(freqs=freqs, zs=zs, zes=zes))
+    return data
 
 
 def read_edi_file(fn, sort_freq="asc", errors="VAR", error_floor=0.05,
@@ -109,7 +115,7 @@ def read_edi_file(fn, sort_freq="asc", errors="VAR", error_floor=0.05,
           If None, no attempt to read errors in will be made.
         - *error_floor*: real or complex float or 2 x 2 ndarray. The real and
           imaginary parts are the minimum fractional error on each component
-          of the impedance tensor, after *errors* have been read in. 
+          of the impedance tensor, after *errors* have been read in.
           *error_floor* = None means the minimum error is zero. A 2 x 2 ndarray
           here will apply different errors to each component of Z; a float will
           apply the same error floor to all four components. A real value will
@@ -121,10 +127,10 @@ def read_edi_file(fn, sort_freq="asc", errors="VAR", error_floor=0.05,
         - *Zs*: m x 2 x 2 complex ndarray
         - *Zerrors*: m x 2 x 2 ndarray. If *error_floor* was complex, *Zerrors*
           will be complex. If it were real or None, *Zerrors* will be real.
-    
+
     This function doesn't to work for multi-site EDIs, nor possibly some
     single-site ones given the variation in formats.
-    
+
     """
     edi = read_edi_dict(fn)
     freqs = np.asarray(edi["FREQ"])
@@ -154,7 +160,7 @@ def read_edi_file(fn, sort_freq="asc", errors="VAR", error_floor=0.05,
     Zs = Zs[sort_indices]
     Zerrors = Zerrors[sort_indices]
     indices = mt.between_freqs(freqs, f0=f0, f1=f1)
-    return freqs[indices], Zs[indices], Zerrors[indices]  
+    return freqs[indices], Zs[indices], Zerrors[indices]
 
 
 def read_edi_dict(fn, **kwargs):
@@ -176,7 +182,7 @@ def read_edi_dict(fn, **kwargs):
             bname = items[0].replace('>', '').replace('=', '')
             if bname in option_bnames:
                 # This is an option block.
-                ##print('{0}: option block {1}'.format(i, bname))
+                logger.debug('{0}: option block {1}'.format(i, bname))
                 options = {}
                 for j, line2 in enumerate(lines_copy[i + 1:]):
                     line2 = line2.strip('\n').strip('\r')
@@ -184,7 +190,7 @@ def read_edi_dict(fn, **kwargs):
                         continue
                     if line2.strip()[0] is '>':
                         break
-                    ##print(' {0}: {1}'.format(j + 1, line2))
+                    logger.debug(' {0}: {1}'.format(j + 1, line2))
                     items = line2.split('=')
                     if len(items) == 2:
                         option, value = items
@@ -204,7 +210,7 @@ def read_edi_dict(fn, **kwargs):
                     edi[bname] = options
             else:
                 # This is a data block.
-                ##print('{0}: data block {1}'.format(i, bname))
+                logger.debug('{0}: data block {1}'.format(i, bname))
                 data = []
                 for j, line2 in enumerate(lines_copy[i + 1:]):
                     line2 = line2.strip('\n').strip('\r')
@@ -213,7 +219,7 @@ def read_edi_dict(fn, **kwargs):
                     if line2.strip()[0] is '>':
                         break
                     items2 = line2.split()
-                    ##print(' {0}: {1}'.format(j + i, line2))
+                    logger.debug(' {0}: {1}'.format(j + i, line2))
                     data += items2
                 edi[bname] = data
     nulls = []
@@ -232,7 +238,7 @@ def read_edi_dict(fn, **kwargs):
 
     if nulls:
         temp = 'Removing bad values '
-        ##print(temp)
+        logger.debug(temp)
         for bname in edi.keys():
             block_value = edi[bname]
             if isinstance(block_value, list) and block_value:
@@ -240,26 +246,25 @@ def read_edi_dict(fn, **kwargs):
                 for null_index in nulls:
                     del block_value[null_index]
 
-    ##print('Removing blocks with no data...')
-    edi_copy = edi
-    for key in edi_copy.keys():
-        if not edi_copy[key]:
+    logger.debug('Removing blocks with no data...')
+    for key in list(edi.keys()):
+        if not edi[key]:
             del edi[key]
 
     for key in edi.keys():
         value = edi[key]
         if isinstance(value, list) and value:
-            ##print('Converting {0} to floats...'.format(key))
-            edi[key] = map(float, value)
+            logger.debug('Converting {0} to floats...'.format(key))
+            edi[key] = [float(v) for v in value]
 
     length = 0
     for key in edi.keys():
         if key in option_bnames:
-            ##print('{0} option block'.format(key))
+            logger.debug('{0} option block'.format(key))
             block = edi[key]
             for option in block.keys():
                 value = block[option]
-                ##print(' {0}={1}'.format(option, value))
+                logger.debug(' {0}={1}'.format(option, value))
         else:
             if not length:
                 length = len(edi[key])
@@ -268,8 +273,8 @@ def read_edi_dict(fn, **kwargs):
             # if len(edi[key]) != length:
                 # print('key=%s expected length=%d actual length=%d' % (
                 #       key, length, len(edi[key])))
-    
-    ##print('Adding standard deviations...')
+
+    logger.debug('Adding standard deviations...')
     variances = ['ZXX.VAR', 'ZXY.VAR', 'ZYX.VAR', 'ZYY.VAR']
     for var in variances:
         if var in edi.keys():
@@ -283,9 +288,12 @@ def read_edi_dict(fn, **kwargs):
             edi[prop] = value
 
     edi['DATAID'] = str(edi['DATAID'])
-    if "LAT" in edi and "LONG" in edi:
-        edi["LAT"] = convert_geocoord(edi["LAT"])
-        edi["LONG"] = convert_geocoord(edi["LONG"])
+    try:
+        if "LAT" in edi and "LONG" in edi:
+            edi["LAT"] = convert_geocoord(edi["LAT"])
+            edi["LONG"] = convert_geocoord(edi["LONG"])
+    except NameError:
+        logger.warning('Cannot convert lat/lons: {}'.format(traceback.format_exc()[-1]))
 
     return edi
 
@@ -301,7 +309,7 @@ def write_edi(data, fn, **kws):
 
 
 def write_edi_file(
-            fn, freqs, zs, zes, 
+            fn, freqs, zs, zes,
             name='unnamed', x='nan', y='nan',
             lat='nan', lon='nan', easting='nan', northing='nan',
             zone='nan', elev='nan', **kwargs):
@@ -344,13 +352,13 @@ def write_edi_file(
 
 def set_error_floor(data, errors=None, floor=0.05, floor_type="fractional"):
     """Calculate error floors or apply a standard error.
-    
+
     Args:
         - *data*: n x subshape ndarray of real
         - *errors*: optional n x subshape ndarray of existing errors
         - *floor*: float, error floor
         - *floor_type*: "fractional" or "absolute"
-    
+
     Returns:
         - *errors*: n x subshape ndarray of errors
 
@@ -368,22 +376,22 @@ def set_error_floor(data, errors=None, floor=0.05, floor_type="fractional"):
     else:
         min_errors = np.ones(len(data)) * floor
     return np.where(min_errors < errors, errors, min_errors).reshape(shape)
-    
+
 
 def set_error_floor_Z(Zs, Zerrors=None, error_floor=0.05):
     """Calculate error floors or apply a standard error.
-    
+
     Args:
         - *Zs*: m x 2 x 2 complex ndarray of impedance tensors
         - *Zerrors*: optional m x 2 x 2 real or complex ndarray of errors
         - *error_floor*: real or complex float or 2 x 2 ndarray. The real and
           imaginary parts are the minimum fractional error on each component
-          of the impedance tensor, after *errors* have been read in. 
+          of the impedance tensor, after *errors* have been read in.
           *error_floor* = None means the minimum error is zero. A 2 x 2 ndarray
           here will apply different errors to each component of Z; a float will
           apply the same error floor to all four components. A real value will
-          apply to same error floor to the real and imaginary components.    
-    
+          apply to same error floor to the real and imaginary components.
+
     Returns: *Zerrors*
         - *Zerrors*: m x 2 x 2 ndarray. If *error_floor* was complex, *Zerrors*
           will be complex. If it were real or None, *Zerrors* will be real.
@@ -409,7 +417,7 @@ def set_error_floor_Z(Zs, Zerrors=None, error_floor=0.05):
                     Zes[k, i, j] = floor_real + 0j
                 else:
                     Zes[k, i, j] = Zerrors[k, i, j].real + 0j
-                
+
                 floor_imag = np.abs(Zs[k, i, j] * error_floor[i, j].imag)
                 if floor_imag > Zerrors[k, i, j].imag:
                     Zes[k, i, j] += floor_imag * 1j

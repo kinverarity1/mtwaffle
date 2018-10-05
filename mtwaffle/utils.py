@@ -58,7 +58,7 @@ def resurrect_complex(d):
             try:
                 arr = np.asarray(value, dtype=np.float)
             except:
-                print 'failed to convert', value
+                logger.debug('failed to convert {}'.format(value))
             else:
                 d[key] = arr
             continue
@@ -89,7 +89,7 @@ def convert_keys_to_string(dictionary):
     """Recursively converts dictionary keys to strings."""
     if not isinstance(dictionary, dict):
         return dictionary
-    return dict((str(k), convert_keys_to_string(v)) 
+    return dict((str(k), convert_keys_to_string(v))
         for k, v in dictionary.items())
 
 

@@ -14,13 +14,13 @@ from os import path
 
 from distutils.core import setup
 
-from mtwaffle import __version__
+__version__ = '0.1'
 
 
 with open(path.join(path.dirname(__file__), "requirements.txt"), "r") as f:
     requirements = f.read().splitlines()
 
-with open(path.join(path.dirname(__file__), "README.rst"), "r") as f:
+with open(path.join(path.dirname(__file__), "README.md"), "r") as f:
     README = f.read()
 
 setup(

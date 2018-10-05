@@ -17,19 +17,19 @@ logger = logging.getLogger(__name__)
 
 RAD2DEG = 180 / np.pi
 
-from utils import AttrDict
+from mtwaffle.utils import AttrDict
 
 
 def show_indices(arr):
     r"""Return a string showing positive and negative indices for elements of a
     list.
-    
+
     For example::
-    
-        >>> print arr
+
+        >>> print(arr)
         [  1.0883984    1.52735318   2.14333993   3.00775623   4.22079456
            5.92305539   8.31184382  11.66403876  16.36818533]
-        >>> print "\n".join(mt.show_indices(arr))
+        >>> print("\n".join(mt.show_indices(arr)))
         0 [-9] = 1.088
         1 [-8] = 1.527
         2 [-7] = 2.143
@@ -39,15 +39,15 @@ def show_indices(arr):
         6 [-3] = 8.312
         7 [-2] = 11.664
         8 [-1] = 16.368
-    
+
     """
-    return ["%d [-%d] = %5.3f" % (i[0], len(arr) - i[0], i[1]) 
+    return ["%d [-%d] = %5.3f" % (i[0], len(arr) - i[0], i[1])
             for i in zip(range(len(arr)), arr)]
-          
-        
+
+
 def linear_interp(freqs, Zs, newfreqs, extrapolation='remove'):
     """Calculate impedance tensors at new frequencies by linear interpolation.
-    
+
     Args:
         - *freqs*: n x 1 ndarray of frequencies
         - *Zs*: n x 2 x 2 complex ndarray of impedance tensors
@@ -57,39 +57,33 @@ def linear_interp(freqs, Zs, newfreqs, extrapolation='remove'):
               this guarantees newsfreqs.shape==freqs.shape and newZs.shape==Zs.shape
             - 'remove': alter *newfreqs* such that no extrapolation is done
             - 'error': raise Exception in extrapolation is required
-        
+
     Returns:
         - *newfreqs*: m x 1 ndarray of new frequencies
         - *newZs*: m x 2 x 2 complex ndarray of impedance tensors
-    
+
     """
     freqs = np.asarray(freqs)
     newfreqs = np.asarray(newfreqs)
     assert len(freqs) == Zs.shape[0]
-    
+
     # Sort Zs from low to high freq.
     indices = np.argsort(freqs)
     freqs = freqs[indices]
     Zs = Zs[indices]
-    
+
     freq0 = freqs[0]
     freq1 = freqs[-1]
-    # print 'freq0', freq0, 'freq1', freq1
+
     if extrapolation == 'nan':
         Znan = np.ones((2, 2)) * np.nan
         for f in newfreqs:
-            # print 'f, f.shape', f, f.shape
             if f < freq0:
-                # print '< 1', f, freq0, freqs[:2], Zs[:2]
                 freqs = np.insert(freqs, 0, f, axis=0)
                 Zs = np.insert(Zs, 0, Znan, axis=0)
-                # print '< 2', f, freq0, freqs[:2], Zs[:2]
             if f > freq1:
-                # print '> 1', f, freq1, freqs[:2], Zs[-2:]
                 freqs = np.append(freqs, [f], axis=0)
-                # print '> 1b', Zs.shape, Znan.shape, np.array([Znan]).shape
                 Zs = np.append(Zs, np.array([Znan]), axis=0)
-                # print '> 2', f, freq1, freqs[:2], Zs[-2:]
         indices = np.argsort(freqs)
         freqs = freqs[indices]
         Zs = Zs[indices]
@@ -103,23 +97,22 @@ def linear_interp(freqs, Zs, newfreqs, extrapolation='remove'):
                 raise Exception('newfreq %f < (%f-%f)' % (nf, freqs[0], freqs[-1]))
             if nf > freqs[-1]:
                 raise Exception('newfreq %f > (%f-%f)' % (nf, freqs[0], freqs[-1]))
-    # print 'freqs', freqs
-    # print 'newfreqs', newfreqs
+
     newZs = np.empty((len(newfreqs), 2, 2), dtype=np.complex)
     for i, j in ((0,0), (0,1), (1,0), (1,1)):
-        newZs[:,i,j] = (interp1d(freqs, Zs[:,i,j].real, axis=0)(newfreqs) + 
+        newZs[:,i,j] = (interp1d(freqs, Zs[:,i,j].real, axis=0)(newfreqs) +
                         interp1d(freqs, Zs[:,i,j].imag, axis=0)(newfreqs) * 1j)
-    
+
     return newfreqs, newZs
 
-    
+
 def between_freqs(freqs, f0=None, f1=None):
     """Return impedance tensors between frequencies, inclusive.
-    
+
     Args:
         - *freqs*: n x 1 ndarray
         - *f0, f1*: floats for min and max frequencies
-        
+
     Returns: *indices* to *freqs* array
     """
     freqs = np.asarray(freqs)
@@ -141,13 +134,13 @@ def ohms2mV_km_nT(Z):
 def mV_km_nT2ohms(Z):
     """Convert mV/km/nT to ohms"""
     return Z / 796.
-    
-    
+
+
 def inv_imag_sign(Z):
     """Invert sign of imaginary parts of Z."""
     return Z.real + Z.imag * -1 * 1j
-    
-    
+
+
 def delete(arrays, indices):
     '''Delete *indices* from each ndarray in *arrays*.
 
@@ -191,12 +184,12 @@ def delete_freq(del_freqs, freqs, arrays, ret_indices=False):
 
 def appres(freqs, Zs):
     """Calculate apparent resistivity.
-    
+
     Args:
         - *freqs*: float or n x 1 ndarray
         - *Zs*: float, 2 x 2 complex ndarray or n x 2 x 2 complex ndarray with
           impedance in units of mV/km/nT
-    
+
     Returns: *res*
         - *res*: same shape as *Zs*
     """
@@ -210,22 +203,22 @@ def appres(freqs, Zs):
         return res
     except:
         return 0.2 / freqs * np.abs(Zs) ** 2
-    
+
 
 def phase(Zs):
     """Phase in the first quadrant."""
     return np.arctan(Zs.imag / Zs.real) * RAD2DEG
-    
-    
+
+
 def phase2(Zs):
     """Phase with quadrant information preserved."""
     return np.arctan2(Zs.imag, Zs.real) * RAD2DEG
-    
-    
+
+
 def phase_abs(Zs):
     """Phase forced to be in the first quadrant."""
     return np.arctan(np.abs(Zs.imag / Zs.real)) * RAD2DEG
-    
+
 
 def rot(A, theta=0):
     """Rotate 2 x 2 array A by *theta* degrees."""
@@ -244,8 +237,8 @@ def ptens(Z):
         return np.dot(LA.inv(Z.real), Z.imag)
     elif Z.ndim == 3:
         return np.asarray([ptens(Zi) for Zi in Z])
-    
-    
+
+
 def normptskew(Z):
     """Normalised phase tensor skew of Booker (2012).
     Z can be either 2 x 2 or n x 2 x 2 for n frequencies."""
@@ -276,7 +269,7 @@ def Z4(z):
 
 def tan4t(z, bit='both'):
     Z4cc = Z4(z).real + Z4(z).imag * -1j
-    num = 2 * (Z3(z) * Z4cc).real 
+    num = 2 * (Z3(z) * Z4cc).real
     den = np.abs(Z4(z)) ** 2 - np.abs(Z3(z)) ** 2
     if bit == 'both':
         return num / den
@@ -295,28 +288,28 @@ def fm9(z):
 
 def ptensaz(Z):
     """Find the rotation angle for impedance tensor *Z* such that
-    
+
     mathematical rotation angle, so it's counter-clockwise, but then the coordinate system is the reverse.
 
      1. The sum of squares of the off-diagonals of the phase tensor are minimized
         (i.e. coordinate axes parallel to ellipse axes); and
      2. ptens[0, 0] > ptens[1, 1]
         (i.e. ellipse major axis is parallel to the first coordinate axis)
-    
+
     """
     def offdiagsum(t):
         x = rot(Z, t)
         P = ptens(x)
         return P[0, 1] ** 2 + P[1, 0] ** 2
-    
+
     xopt = scipy.optimize.fmin(offdiagsum, 0.1, disp=False)
     angle1 = xopt[0]
     logger.debug("ptensaz: inital solution=%f" % angle1)
-    
+
     # We want the angle which aligns the 1st coordinate axis with the major
     # axis of the ellipse, so need to check the angle 90 degrees away from the
     # solution.
-    
+
     if angle1 < 0:
         angle1 = 360 + angle1
     logger.debug("ptensaz: %f" % angle1)
@@ -324,35 +317,35 @@ def ptensaz(Z):
     if angle2 < 0:
         angle2 = 360 + angle2
     logger.debug("ptensaz: after removal of negative angles=%f, %f" % (angle1, angle2))
-    
+
     # We want the smaller angle, between 0 and 180 degrees:
-    
+
     if angle1 > 180:
         angle1 -= 180
     if angle2 > 180:
         angle2 -= 180
     logger.debug("ptensaz: after adjustment to first 2 quadrants=%f, %f" % (angle1, angle2))
-    
+
     ptens1 = ptens(rot(Z, angle1))
     ptens2 = ptens(rot(Z, angle2))
     if ptens2[0, 0] > ptens1[0, 0]:
         return angle2
     else:
         return angle1
-    
-    
+
+
 def ptensazimuths(Zs):
-    """Return phase tensor azimuths for several impedance tensors. See 
+    """Return phase tensor azimuths for several impedance tensors. See
     :func:`ptensaz`."""
     return np.array([ptensaz(Z) for Z in Zs])
-    
-    
+
+
 def sites_data(sites, phase_func=phase):
     '''Return components of array.
 
     Args:
         - *sites*: list containing dicts with keys freqs, zs, zes
-    
+
     '''
     data = []
     for i, site in enumerate(sites):
@@ -404,7 +397,7 @@ def plot_ptensell(ptensors, freqs=None, scale=1, x0=0, y0=0, centre_dot=False,
                   xscale=1, color="k", lw=1, fmt="%s", resolution=20, xlabstep=1,
                   fig=None, fign=None, ax=None, colours=None, rot90=False):
     """Plot phase tensor ellipses.
-    
+
         - *ptensors*: n x 2 x 2 ndarray of n phase tensors
         - *freqs*: optional n x 1 ndarray of frequencies
         - *scale*: size of the "unit" circle radius
@@ -413,7 +406,7 @@ def plot_ptensell(ptensors, freqs=None, scale=1, x0=0, y0=0, centre_dot=False,
         - *xscale*: control horizontal (frequency axis) spacing of ellipses
         - *resolution*: number of angles to use in drawing the ellipses
 
-    
+
     """
     if ax is None:
         if fig is None:
@@ -448,17 +441,17 @@ def plot_ptensell(ptensors, freqs=None, scale=1, x0=0, y0=0, centre_dot=False,
         ax.set_xticklabels(map(lambda f: fmt % f, freqs[indices]))
         plt.setp(ax.get_xticklabels(), rotation=rot, ha="right")
 
-    
+
 def plot_ptensell_filled(ptensors, freqs=None, x0=0, y0=0,
-                         fillarr=None, cmap=plt.cm.spectral_r, 
-                         vmin=None, vmax=None, 
-                         facecolor='none', edgecolor='k', 
-                         fmt="%s", xlabstep=1, 
+                         fillarr=None, cmap=plt.cm.spectral_r,
+                         vmin=None, vmax=None,
+                         facecolor='none', edgecolor='k',
+                         fmt="%s", xlabstep=1,
                          adj_pmax=lambda x:x, adj_pmin=lambda x:x,
-                         extra_rotation=0, 
+                         extra_rotation=0,
                          fig=None, fign=None, ax=None, plotkws=None):
     '''Plot phase tensor ellipses with filled centres.
-    
+
     They are rotated by 90 deg...
     '''
     if plotkws is None:
@@ -489,8 +482,7 @@ def plot_ptensell_filled(ptensors, freqs=None, x0=0, y0=0,
         pmin = adj_pmin(ptens_min(P))
         alpha = ptens_alpha(P)
         beta = ptens_beta(P)
-        #print x0, y0, pmax, pmin, alpha, beta
-        #print ' 1', ptens1(P), '2', ptens2(P), '3', ptens3(P)
+
         if edgecolor == 'auto':
             ec = colours[pi]
         else:
@@ -503,18 +495,18 @@ def plot_ptensell_filled(ptensors, freqs=None, x0=0, y0=0,
         ax.set_xticks(indices)
         ax.set_xticklabels(map(lambda f: fmt % f, freqs[indices]))
         plt.setp(ax.get_xticklabels(), rotation=rot, ha="right")
-    
-    
+
+
 def animate_ptens(P, fign=1, clf=True, pngs_path=None, axes="math"):
     """Animate the phase tensor P.
-    
+
     Plot the product of P with a unit vector as it rotates around the unit
     circle. The unit vector's tip is blue dotted and the product with P is red.
-    
+
     Args:
         - *P*: 2 x 2 real ndarray phase tensor
-        - *axes*: tuple of which direction 
-    
+        - *axes*: tuple of which direction
+
     """
     plt.ion()
     fig = plt.figure(fign)
@@ -525,7 +517,7 @@ def animate_ptens(P, fign=1, clf=True, pngs_path=None, axes="math"):
     ax.set_ylim(-2, 2)
     ax.axhline(0, color="k")
     ax.axvline(0, color="k")
-    
+
     vrp = np.dot(P, [1., 0.])
     vtp = [1., 0.]
     logger.debug("animate_ptens: vrp=%s" % vrp)
@@ -542,17 +534,17 @@ def animate_ptens(P, fign=1, clf=True, pngs_path=None, axes="math"):
         vrp = vr
         vtp = vt
     plt.ioff()
-    
-    
+
+
 def animate_ptensors(Ps, colour="k", colours=None, lw=1, lws=None, fign=1,
                      clf=True, pngs_path=None, resolution=45, axes="normal",
                      unit_colour="g", unit_lw=1, unit_ls=":"):
     """Animate the phase tensor P.
-    
+
     Plot the product of P with a unit vector as it rotates around the unit
     circle. The unit vector's tip is drawn with *unit_colour*, *unit_ls*, and
     *unit_lw*.
-    
+
     Args:
         - *Ps*: n x 2 x 2 ndarray of n phase tensors
         - *colour*: matplotlib colour string
@@ -572,12 +564,12 @@ def animate_ptensors(Ps, colour="k", colours=None, lw=1, lws=None, fign=1,
           angles are clockwise.
         - *unit_colour, unit_ls, unit_lw*: control line style of unit circle
           vectors' tips.
-        
-    
+
+
     This function won't work with inline pylab mode in IPython. You can disable
     that by running ``%pylab`` beforehand (and re-enable it with
     ``%pylab inline``).
-    
+
     """
     plt.ion()
     fig = plt.figure(fign)
@@ -588,7 +580,7 @@ def animate_ptensors(Ps, colour="k", colours=None, lw=1, lws=None, fign=1,
     ax.set_ylim(-2, 2)
     ax.axhline(0, color="k")
     ax.axvline(0, color="k")
-    
+
     Ps = np.asarray(Ps)
     n = Ps.shape[0]
     if colours is None:
@@ -623,7 +615,7 @@ def animate_ptensors(Ps, colour="k", colours=None, lw=1, lws=None, fign=1,
             fig.savefig(fn, dpi=50)
     plt.ioff()
 
-    
+
 def ptens_alpha(P):
     return 0.5 * np.arctan2((P[0,1] + P[1,0]), (P[0,0] - P[1,1])) * 180 / np.pi
 
@@ -638,52 +630,52 @@ def ptens_alphas(ptensors):
 def ptens_betas(ptensors):
     return np.array([ptens_beta(ptens) for ptens in ptensors])
 
-    
+
 def ptens_min(P):
     return (np.sqrt(ptens1(P)**2 + ptens3(P)**2)
             - np.sqrt(ptens1(P)**2 + ptens3(P)**2 - ptens2(P)**2))
-            
-            
+
+
 def ptens_max(P):
     return (np.sqrt(ptens1(P)**2 + ptens3(P)**2)
             + np.sqrt(ptens1(P)**2 + ptens3(P)**2 - ptens2(P)**2))
 
-    
+
 def ptens1(P):
     return ptens_tr(P) / 2.
-    
+
 
 def ptens2(P):
     return np.sqrt(ptens_det(P))
 
-    
+
 def ptens3(P):
     return ptens_sk(P) / 2.
-    
-    
+
+
 def ptens_tr(P):
     return P[0, 0] + P[1, 1]
 
-    
+
 def ptens_sk(P):
     return P[0, 1] - P[1, 0]
 
-    
+
 def ptens_det(P):
     return (P[0, 0] * P[1, 1]) - (P[0, 1] * P[1, 0])
-    
-    
+
+
 def ptens_theta(P):
     return ptens_alpha(P) - ptens_beta(P)
-    
-    
+
+
 def ptens_ppspl(P):
     '''Return difference in degrees between Pmax and Pmin.'''
     p1 = np.rad2deg(np.arctan(ptens_max(P)))
     p0 = np.rad2deg(np.arctan(ptens_min(P)))
     return p1 - p0
-    
-    
+
+
 ptskew = np.frompyfunc(ptens_sk, 1, 1)
 ptmax = np.frompyfunc(ptens_max, 1, 1)
 ptmin = np.frompyfunc(ptens_min, 1, 1)
@@ -691,15 +683,15 @@ ptalpha = np.frompyfunc(ptens_alpha, 1, 1)
 ptbeta = np.frompyfunc(ptens_beta, 1, 1)
 pttheta = np.frompyfunc(ptens_theta, 1, 1)
 ptppspl = np.frompyfunc(ptens_ppspl, 1, 1)
-    
+
 def ptens_vectors(P, n_thetas=45):
     """Return phase tensor vectors.
-    
+
     For each vector v_u on the unit circle (there are n_thetas of these vectors)
     calculate P dot v_u and return the family of the resulting vectors, together
     with the thetas
-    
-    Returns: 
+
+    Returns:
         - *thetas* (on the unit circle)
         - *vecs*: n_thetas x 2 ndarray
     """
@@ -709,21 +701,21 @@ def ptens_vectors(P, n_thetas=45):
         vunit = np.array([np.cos(t), np.sin(t)])
         vecs[i, ...] = np.dot(P, vunit)
     return thetas, vecs
-    
-    
+
+
 def ptens_misfit(thetas, obs_vecs, fwd_vecs):
     """Return phase tensor misfit vectors and angular misfits.
-    
+
     Args:
         - *thetas*: n x 1 ndarray of angles
         - *obs_vecs*: n x 2 ndarray from :func:`ptens_vectors`
         - *fwd_vecs*: n x 2 ndarray from :func:`ptens_vectors`
-    
+
     Returns:
         - *mf_vecs*: n x 2 ndarray of misfit vectors
         - *mf_angles*: n x 1 ndarray of misfit angles between the observed and
           forward resulting vector
-        
+
     """
     n = len(thetas)
     mf_vecs = np.empty((n, 2))
@@ -743,18 +735,18 @@ def normfreqs(Z, freqs):
     else:
         Z = Z.real * factor + Z.imag * factor * 1j
     return Z
-    
-    
+
+
 def plot_res_phase2(freqs, Zs, phase_func=phase, **kwargs):
     """Quick wrapper for plotting the two modes resistivity and phase.
-    
+
     Args:
         - *freqs*: n x 1 ndarray
         - *Zs*: n x 2 x 2 complex ndarray
         - *phase_func*: function used to calculate phase
-    
+
     Kwargs: passed to :func:`plot_res_phase`
-    
+
     """
     res = appres(freqs, Zs)
     phase = phase_func(Zs)
@@ -764,10 +756,10 @@ def plot_res_phase2(freqs, Zs, phase_func=phase, **kwargs):
     kwargs["res_indiv_kws"] = res_indiv_kws
     return plot_res_phase([freqs, freqs], [res[:, 0, 1], res[:, 1, 0]],
                           [phase[:, 0, 1], phase[:, 1, 0]], **kwargs)
-    
-    
+
+
 def plot_res_phase(freqs, reses, phases, res_es=None, phase_es=None,
-                   res_kws=None, phase_kws=None, 
+                   res_kws=None, phase_kws=None,
                    res_indiv_kws=None, phase_indiv_kws=None,
                    res0=None, res1=None, phase0=None, phase1=None,
                    f0=None, f1=None,
@@ -775,7 +767,7 @@ def plot_res_phase(freqs, reses, phases, res_es=None, phase_es=None,
                    res_ax=None, phase_ax=None,
                    grid="both", legend="res"):
     """Plot resistivity and phase curves as a function of frequency.
-    
+
     Args:
         - *freqs*: [freqs_1, freqs_2, ... freqs_n] list of m ndarrays
         - *reses*: [reses_1, reses_2, ... reses_n] list of m ndarrays
@@ -794,9 +786,9 @@ def plot_res_phase(freqs, reses, phases, res_es=None, phase_es=None,
           and phase subplots.
         - *res_ax, phase_ax*: resistivity and phase Axes objects
         - *grid, legend*: "both", "res", "phase"
-        
+
     Returns: *res_ax, phase_ax* matplotlib Axes objects
-    
+
     """
     if layout:
         if layout.startswith("v"): # vertical
@@ -820,12 +812,12 @@ def plot_res_phase(freqs, reses, phases, res_es=None, phase_es=None,
             fig = plt.figure(fign, figsize=figsize)
         res_ax = fig.add_subplot(sps[0])
         phase_ax = fig.add_subplot(sps[1])
-        
+
     if res_kws is None:
         res_kws = {}
     if phase_kws is None:
         phase_kws = {}
-    
+
     m = len(freqs)
     for i in range(m):
         fs = freqs[i]
@@ -839,7 +831,7 @@ def plot_res_phase(freqs, reses, phases, res_es=None, phase_es=None,
             phase_e = phase_es[i]
         else:
             phase_e = np.zeros(len(fs))
-            
+
         if res_indiv_kws:
             res_kws_i = res_kws.copy()
             res_kws_i.update(res_indiv_kws[i])
@@ -850,17 +842,17 @@ def plot_res_phase(freqs, reses, phases, res_es=None, phase_es=None,
             phase_kws_i.update(phase_indiv_kws[i])
         else:
             phase_kws_i = phase_kws
-            
+
         res_ax.errorbar(fs, res, **res_kws_i)
         phase_ax.errorbar(fs, phase, **phase_kws_i)
-        
+
         del res_kws_i
         del phase_kws_i
-        
+
     res_ax.set_xscale("log")
     res_ax.set_yscale("log")
     phase_ax.set_xscale("log")
-    
+
     if res0 and res1:
         res_ax.set_ylim(res0, res1)
     if phase0 and phase1:
@@ -871,10 +863,10 @@ def plot_res_phase(freqs, reses, phases, res_es=None, phase_es=None,
         f0 = np.min(np.ma.masked_invalid(freqs_flat))
     if f1 is None:
         f1 = np.max(np.ma.masked_invalid(freqs_flat))
-    
+
     res_ax.set_xlim(f1, f0)
     phase_ax.set_xlim(f1, f0)
-    
+
     if grid:
         res_ax.grid()
         phase_ax.grid()
@@ -883,21 +875,21 @@ def plot_res_phase(freqs, reses, phases, res_es=None, phase_es=None,
         res_ax.legend(loc="best")
     if legend == "phase" or "both":
         phase_ax.legend(loc="best")
-    
+
     res_ax.set_ylabel(r"Apparent resistivity [$\Omega$m]")
     phase_ax.set_ylabel("Phase [deg]")
-    
+
     res_ax.set_xlabel("Frequency [Hz]")
     phase_ax.set_xlabel("Frequency [Hz]")
-    
+
     return res_ax, phase_ax
-    
+
 
 def plot_impedance_tensors(Zs, freqs=None, z0=None, z1=None, f0=None, f1=None,
                            real_kws=None, imag_kws=None, horiz_line_kws=None,
                            fig=None, fign=None, clf=True, normbyfreqs=False):
     """Plot impedance tensors.
-    
+
     Args:
         - *Zs*: n x 2 x 2 complex ndarray of n impedance tensors
         - *freqs*: optional n x 1 ndarray of frequencies
@@ -949,12 +941,9 @@ def plot_impedance_tensors(Zs, freqs=None, z0=None, z1=None, f0=None, f1=None,
             Zi *= np.sqrt(1 / freqs)
         max_zij = np.nanmax([np.nanmax(Zr), np.nanmax(Zi)])
         min_zij = np.nanmin([np.nanmin(Zr), np.nanmin(Zi)])
-        # print 'i, j, min, max, comp to', i, j, min_zij, max_zij, min_z, max_z
         if max_zij > max_z:
-            # print 'adjusting max_z'
             max_z = max_zij
         if min_zij < min_z:
-            # print 'adjusting min_z'
             min_z = min_zij
         grid[k].plot(freqs, Zr, **real_kws)
         grid[k].plot(freqs, Zi, **imag_kws)
@@ -974,19 +963,19 @@ def plot_impedance_tensors(Zs, freqs=None, z0=None, z1=None, f0=None, f1=None,
     for ax in grid:
         ax.set_xlim(f1, f0)
 
-        
+
 def bostick(freqs, res, phase):
     '''Bostick transform.
-    
+
     Args:
         - *freqs*: n x 1 ndarray
         - *res*: n x 2 x 2 or n x 1 ndarray of apparent resistivities
         - *phase*: ndarray, same shape as *res*, units of degrees
-        
+
     Returns:
         - *bz*: n x m ndarray of depths in metres
         - *br*: n x m ndarray of resistivities in ohm metres
-    
+
     '''
     freqs = np.asarray(freqs)
     res = np.asarray(res)
@@ -1033,7 +1022,7 @@ def pos_quads(carr, units='deg'):
 
 def catan2(num, den, out_unit='deg'):
     '''Complex arctan2 function'''
-    real = np.arctan2(num.real, den.real) 
+    real = np.arctan2(num.real, den.real)
     imag = np.arctan2(num.imag, den.imag)
     if out_unit == 'deg':
         real = real * 180 / np.pi
@@ -1071,22 +1060,22 @@ class L(object):
         s.t3 = (T11 - T22) / 2
         s.t4 = (T12 - T21) / 2
         s.t0 = np.sqrt(s.t2 ** 2 + s.t3 ** 2)
-        
+
 def t11b(z, b):
     return z[0, 0] * (np.cos(b) ** 2) + (z[0, 1] + z[1, 0]) * np.cos(b) * np.sin(b) + z[1, 1] * (np.sin(b) ** 2)
 def t12b(z, b):
     return z[0, 1] * (np.cos(b) ** 2) + (z[1, 1] - z[0, 0]) * np.cos(b) * np.sin(b) - z[1, 0] * (np.sin(b) ** 2)
 
-def plot_mohr_imp(freqs, zs, axreal=None, aximag=None, 
-              cmap=plt.cm.jet_r, return_axes=False, 
+def plot_mohr_imp(freqs, zs, axreal=None, aximag=None,
+              cmap=plt.cm.jet_r, return_axes=False,
               fig=None, fign=None, clf=True):
     '''
-    
+
     Args:
-    
+
         - xlim, ylim: n x 2 complex ndarrays of x and y axes limits.
           Use None for automatic limits.
-    
+
     '''
     if axreal is None and aximag is None:
         if fig is None:
@@ -1119,7 +1108,7 @@ def plot_mohr_imp(freqs, zs, axreal=None, aximag=None,
     text_1.set_color(cmap(1 - 1e-10))
     if return_axes:
         return axreal, aximag
-        
+
 
 def plot_mohr_ptensor(freqs, ptensors, cmap=plt.cm.jet, ax=None, fig=None, fign=None, clf=True):
     if ax is None:
