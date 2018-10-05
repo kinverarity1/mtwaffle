@@ -1,3 +1,4 @@
+attrdict
 numpy
 matplotlib
 scipy

@@ -95,11 +95,7 @@ def read_edi(fn, sd=True, **kws):
     mt.site_data().
     '''
     freqs, zs, zes = read_edi_file(fn, **kws)
-    if sd:
-        data = mt.calc_basic_props(freqs, zs)
-    else:
-        data = utils.AttrDict(dict(freqs=freqs, zs=zs, zes=zes))
-    return data
+    return mt.Site(freqs, zs)
 
 
 def read_edi_file(fn, sort_freq="asc", errors="VAR", error_floor=0.05,
