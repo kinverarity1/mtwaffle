@@ -65,7 +65,7 @@ setup(
 
     entry_points={
         "console_scripts": [
-            "mtrfviewer = mtwaffle.rfviewer:main",
+            # "mtrfviewer = mtwaffle.rfviewer:main",
         ],
     }
     )

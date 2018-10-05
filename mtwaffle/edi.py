@@ -293,7 +293,8 @@ def read_edi_dict(fn, **kwargs):
             edi["LAT"] = convert_geocoord(edi["LAT"])
             edi["LONG"] = convert_geocoord(edi["LONG"])
     except NameError:
-        logger.warning('Cannot convert lat/lons: {}'.format(traceback.format_exc()[-1]))
+        pass
+        # logger.warning('Cannot convert lat/lons: {}'.format(traceback.format_exc()[-1].strip('\n')))
 
     return edi
 

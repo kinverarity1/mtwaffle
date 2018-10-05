@@ -1067,14 +1067,21 @@ def t12b(z, b):
     return z[0, 1] * (np.cos(b) ** 2) + (z[1, 1] - z[0, 0]) * np.cos(b) * np.sin(b) - z[1, 0] * (np.sin(b) ** 2)
 
 def plot_mohr_imp(freqs, zs, axreal=None, aximag=None,
-              cmap=plt.cm.jet_r, return_axes=False,
+              cmap=plt.cm.jet_r,
               fig=None, fign=None, clf=True):
-    '''
+    '''Plot Mohr circles
 
     Args:
+        freqs (n x 1 ndarray): list of frequencies
+        zs (n x 2 x 2 complex ndarray): list of impedance tensors
+        axreal (matplotlib Axes): axes for the LHS plot of Re(Z) (optional)
+        aximag (matplotlib Axes): axes for the RHS plot of Im(Z) (optional)
+        cmap (matplotlib colormap): (optional)
+        fig (matplotlib Figure): (optional)
+        fign (int): matplotlib figure number (optional)
+        clf (bool): clear existing matplotlib figure (optional)
 
-        - xlim, ylim: n x 2 complex ndarrays of x and y axes limits.
-          Use None for automatic limits.
+    Returns: (axreal, aximag): tuple of the matplotlib Axes
 
     '''
     if axreal is None and aximag is None:
@@ -1087,27 +1094,31 @@ def plot_mohr_imp(freqs, zs, axreal=None, aximag=None,
     axreal.set_title('Real')
     aximag.set_title('Imag')
     angles = np.linspace(0, np.pi * 1.0, 50)
+    freq_0_line = None
     for fi, freq in enumerate(freqs):
         z = zs[fi]
         zr = z.real
         zi = z.imag
         c = cmap(float(fi) / len(freqs))
         for ax, zp in zip((axreal, aximag), (zr, zi)):
-            ax.plot([z12b(zp, a) for a in angles], [z11b(zp, a) for a in angles], color=c)
+            line,  = ax.plot([z12b(zp, a) for a in angles], [z11b(zp, a) for a in angles], color=c)
             ax.plot([lilley_Z4(zp), z12b(zp, 0)], [lilley_Z1(zp), z11b(zp, 0)], ls='-', color=c)
             ax.plot(lilley_Z4(zp), lilley_Z1(zp), marker='o', mfc=c, mec=c, markersize=2)
             ax.axvline(0, color='gray')
             ax.axhline(0, color='gray')
+        if fi == 0:
+            freq_0_line = line
     if axreal.get_xlim()[0] > 0:
         axreal.set_xlim(0, None)
     if aximag.get_xlim()[0] > 0:
         aximag.set_xlim(0, None)
-    legreal = axreal.legend(['%s Hz' % freqs[0], '%s Hz' % freqs[-1]], loc=2, numpoints=1)
+    print('freq_0_line: {}'.format(freq_0_line))
+    print('line: {}'.format(line))
+    legreal = axreal.legend((freq_0_line, line), ['%s Hz' % freqs[0], '%s Hz' % freqs[-1]], loc=2, numpoints=2)
     text_0, text_1 = legreal.get_texts()
     text_0.set_color(cmap(0))
     text_1.set_color(cmap(1 - 1e-10))
-    if return_axes:
-        return axreal, aximag
+    return axreal, aximag
 
 
 def plot_mohr_ptensor(freqs, ptensors, cmap=plt.cm.jet, ax=None, fig=None, fign=None, clf=True):
