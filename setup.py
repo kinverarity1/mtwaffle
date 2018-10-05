@@ -14,7 +14,7 @@ from os import path
 
 from distutils.core import setup
 
-__version__ = '0.1'
+__version__ = '0.2'
 
 
 with open(path.join(path.dirname(__file__), "requirements.txt"), "r") as f:
