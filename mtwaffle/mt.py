@@ -125,7 +125,7 @@ class Site(attrdict.AttrDict):
 
 
 def show_indices(arr):
-    r"""Return a string showing positive and negative indices for elements of a
+    r'''Return a string showing positive and negative indices for elements of a
     list.
 
     For example::
@@ -133,7 +133,7 @@ def show_indices(arr):
         >>> print(arr)
         [  1.0883984    1.52735318   2.14333993   3.00775623   4.22079456
            5.92305539   8.31184382  11.66403876  16.36818533]
-        >>> print("\n".join(mt.show_indices(arr)))
+        >>> print('\n'.join(mt.show_indices(arr)))
         0 [-9] = 1.088
         1 [-8] = 1.527
         2 [-7] = 2.143
@@ -144,13 +144,13 @@ def show_indices(arr):
         7 [-2] = 11.664
         8 [-1] = 16.368
 
-    """
-    return ["%d [-%d] = %5.3f" % (i[0], len(arr) - i[0], i[1])
+    '''
+    return ['%d [-%d] = %5.3f' % (i[0], len(arr) - i[0], i[1])
             for i in zip(range(len(arr)), arr)]
 
 
 def linear_interp(freqs, Zs, newfreqs, extrapolation='remove'):
-    """Calculate impedance tensors at new frequencies by linear interpolation.
+    '''Calculate impedance tensors at new frequencies by linear interpolation.
 
     Args:
         - *freqs*: n x 1 ndarray of frequencies
@@ -166,7 +166,7 @@ def linear_interp(freqs, Zs, newfreqs, extrapolation='remove'):
         - *newfreqs*: m x 1 ndarray of new frequencies
         - *newZs*: m x 2 x 2 complex ndarray of impedance tensors
 
-    """
+    '''
     freqs = np.asarray(freqs)
     newfreqs = np.asarray(newfreqs)
     assert len(freqs) == Zs.shape[0]
@@ -211,14 +211,14 @@ def linear_interp(freqs, Zs, newfreqs, extrapolation='remove'):
 
 
 def between_freqs(freqs, f0=None, f1=None):
-    """Return impedance tensors between frequencies, inclusive.
+    '''Return impedance tensors between frequencies, inclusive.
 
     Args:
         - *freqs*: n x 1 ndarray
         - *f0, f1*: floats for min and max frequencies
 
     Returns: *indices* to *freqs* array
-    """
+    '''
     freqs = np.asarray(freqs)
     if f1 is None or f1 > np.max(freqs):
         f1 = np.max(freqs)
@@ -232,17 +232,17 @@ def between_freqs(freqs, f0=None, f1=None):
 
 
 def ohms2mV_km_nT(Z):
-    """Convert ohms to mV/km/nT."""
+    '''Convert ohms to mV/km/nT.'''
     return Z * 796.
 
 
 def mV_km_nT2ohms(Z):
-    """Convert mV/km/nT to ohms"""
+    '''Convert mV/km/nT to ohms'''
     return Z / 796.
 
 
 def inv_imag_sign(Z):
-    """Invert sign of imaginary parts of Z."""
+    '''Invert sign of imaginary parts of Z.'''
     return Z.real + Z.imag * -1 * 1j
 
 
@@ -288,7 +288,7 @@ def delete_freq(del_freqs, freqs, arrays, ret_indices=False):
 
 
 def appres(freqs, Zs):
-    """Calculate apparent resistivity.
+    '''Calculate apparent resistivity.
 
     Args:
         - *freqs*: float or n x 1 ndarray
@@ -297,7 +297,7 @@ def appres(freqs, Zs):
 
     Returns: *res*
         - *res*: same shape as *Zs*
-    """
+    '''
     Zs = np.asarray(Zs)
     try:
         assert Zs.ndim == 3
@@ -311,47 +311,47 @@ def appres(freqs, Zs):
 
 
 def phase(Zs):
-    """Phase in the first quadrant."""
+    '''Phase in the first quadrant.'''
     return np.arctan(Zs.imag / Zs.real) * RAD2DEG
 
 
 def phase2(Zs):
-    """Phase with quadrant information preserved."""
+    '''Phase with quadrant information preserved.'''
     return np.arctan2(Zs.imag, Zs.real) * RAD2DEG
 
 
 def phase_abs(Zs):
-    """Phase forced to be in the first quadrant."""
+    '''Phase forced to be in the first quadrant.'''
     return np.arctan(np.abs(Zs.imag / Zs.real)) * RAD2DEG
 
 
 def rot(A, theta=0):
-    """Rotate 2 x 2 array A by *theta* degrees."""
+    '''Rotate 2 x 2 array A by *theta* degrees.'''
     t = np.float(theta) / RAD2DEG
     R = np.array([[np.cos(t), -1 * np.sin(t)], [np.sin(t), np.cos(t)]])
     return np.dot(R.T, np.dot(A, R))
 
 
 def rot_arr(arrs, theta):
-    """Rotate a list of 2 x 2 arrays by theta degrees.
+    '''Rotate a list of 2 x 2 arrays by theta degrees.
 
     Arguments:
         arrs (list): list of 2 x 2 arrays.
         theta (int): degrees.
 
-    """
+    '''
     return np.array([rot(arr, theta) for arr in arrs])
 
 
 def ptens(Z):
-    """Phase tensor for either one or multiple impedance tensors.
+    '''Phase tensor for either one or multiple impedance tensors.
 
     Arguments:
         Z (either 2 x 2 ndarray or [<2x2 ndarray>, <2x2 ndarray>, ...]): impedance tensors
 
     Returns: phase tensors in the same shape as the argument Z.
 
-    """
+    '''
     Z = np.asarray(Z)
     if Z.ndim == 2:
         return np.dot(LA.inv(Z.real), Z.imag)
@@ -360,8 +360,8 @@ def ptens(Z):
 
 
 def normptskew(Z):
-    """Normalised phase tensor skew of Booker (2012).
-    Z can be either 2 x 2 or n x 2 x 2 for n frequencies."""
+    '''Normalised phase tensor skew of Booker (2012).
+    Z can be either 2 x 2 or n x 2 x 2 for n frequencies.'''
     Z = np.asarray(Z)
     if Z.ndim == 2:
         P = ptens(Z)
@@ -417,7 +417,7 @@ def fm9(z):
 
 
 def ptensaz(Z):
-    """Find the rotation angle for impedance tensor *Z* such that
+    '''Find the rotation angle for impedance tensor *Z* such that
 
      1. The sum of squares of the off-diagonals of the phase tensor are minimized
         (i.e. coordinate axes parallel to ellipse axes); and
@@ -427,7 +427,7 @@ def ptensaz(Z):
     (mathematical rotation angle, so it's counter-clockwise,
     but then the coordinate system is the reverse.)
 
-    """
+    '''
     def offdiagsum(t):
         x = rot(Z, t)
         P = ptens(x)
@@ -435,7 +435,7 @@ def ptensaz(Z):
 
     xopt = scipy.optimize.fmin(offdiagsum, 0.1, disp=False)
     angle1 = xopt[0]
-    logger.debug("ptensaz: inital solution=%f" % angle1)
+    logger.debug('ptensaz: inital solution=%f' % angle1)
 
     # We want the angle which aligns the 1st coordinate axis with the major
     # axis of the ellipse, so need to check the angle 90 degrees away from the
@@ -443,11 +443,11 @@ def ptensaz(Z):
 
     if angle1 < 0:
         angle1 = 360 + angle1
-    logger.debug("ptensaz: %f" % angle1)
+    logger.debug('ptensaz: %f' % angle1)
     angle2 = angle1 - 90
     if angle2 < 0:
         angle2 = 360 + angle2
-    logger.debug("ptensaz: after removal of negative angles=%f, %f" % (angle1, angle2))
+    logger.debug('ptensaz: after removal of negative angles=%f, %f' % (angle1, angle2))
 
     # We want the smaller angle, between 0 and 180 degrees:
 
@@ -455,7 +455,7 @@ def ptensaz(Z):
         angle1 -= 180
     if angle2 > 180:
         angle2 -= 180
-    logger.debug("ptensaz: after adjustment to first 2 quadrants=%f, %f" % (angle1, angle2))
+    logger.debug('ptensaz: after adjustment to first 2 quadrants=%f, %f' % (angle1, angle2))
 
     ptens1 = ptens(rot(Z, angle1))
     ptens2 = ptens(rot(Z, angle2))
@@ -466,8 +466,8 @@ def ptensaz(Z):
 
 
 def ptensazimuths(Zs):
-    """Return phase tensor azimuths for several impedance tensors. See
-    :func:`ptensaz`."""
+    '''Return phase tensor azimuths for several impedance tensors. See
+    :func:`ptensaz`.'''
     return np.array([ptensaz(Z) for Z in Zs])
 
 
@@ -542,7 +542,7 @@ ptppspl = np.frompyfunc(ptens_ppspl, 1, 1)
 
 
 def ptens_vectors(P, n_thetas=45):
-    """Return phase tensor vectors.
+    '''Return phase tensor vectors.
 
     For each vector v_u on the unit circle (there are n_thetas of these vectors)
     calculate P dot v_u and return the family of the resulting vectors, together
@@ -551,7 +551,7 @@ def ptens_vectors(P, n_thetas=45):
     Returns:
         - *thetas* (on the unit circle)
         - *vecs*: n_thetas x 2 ndarray
-    """
+    '''
     thetas = np.linspace(0, 2 * np.pi, n_thetas)
     vecs = np.empty((n_thetas, 2))
     for i, t in enumerate(thetas):
@@ -561,7 +561,7 @@ def ptens_vectors(P, n_thetas=45):
 
 
 # def ptens_misfit(thetas, obs_vecs, fwd_vecs):
-#     """Return phase tensor misfit vectors and angular misfits.
+#     '''Return phase tensor misfit vectors and angular misfits.
 
 #     Args:
 #         - *thetas*: n x 1 ndarray of angles
@@ -573,7 +573,7 @@ def ptens_vectors(P, n_thetas=45):
 #         - *mf_angles*: n x 1 ndarray of misfit angles between the observed and
 #           forward resulting vector
 
-#     """
+#     '''
 #     n = len(thetas)
 #     mf_vecs = np.empty((n, 2))
 #     mf_angles = np.empty(n)

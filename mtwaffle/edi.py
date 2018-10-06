@@ -282,7 +282,7 @@ def read_edi_dict(fn, **kwargs):
     variances = ['ZXX.VAR', 'ZXY.VAR', 'ZYX.VAR', 'ZYY.VAR']
     for var in variances:
         if var in edi.keys():
-            edi[var.replace('.VAR', '.SDEV')] = map(np.sqrt, edi[var])
+            edi[var.replace('.VAR', '.SDEV')] = np.asarray([np.sqrt(val) for val in edi[var]])
 
     # # Place properties from HEAD and DEFINEMEAS into the main edi dictionary.
     # propblocks = ['DEFINEMEAS', "HEAD"]

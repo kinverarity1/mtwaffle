@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 def plot_res_phase2(freqs, Zs, phase_func=None, **kwargs):
-    """Quick wrapper for plotting the two modes resistivity and phase.
+    '''Quick wrapper for plotting the two modes resistivity and phase.
 
     Args:
         - *freqs*: n x 1 ndarray
@@ -22,16 +22,16 @@ def plot_res_phase2(freqs, Zs, phase_func=None, **kwargs):
 
     Kwargs: passed to :func:`plot_res_phase`
 
-    """
+    '''
     res = mt.appres(freqs, Zs)
     if phase_func is None:
         from mtwaffle import mt
         phase_func = mt.phase
     phase = phase_func(Zs)
-    res_indiv_kws = kwargs.get("res_indiv_kws", [{}, {}])
-    res_indiv_kws[0].update({"label": "xy", "color": "b"})
-    res_indiv_kws[1].update({"label": "yx", "color": "g"})
-    kwargs["res_indiv_kws"] = res_indiv_kws
+    res_indiv_kws = kwargs.get('res_indiv_kws', [{}, {}])
+    res_indiv_kws[0].update({'label': 'xy', 'color': 'b'})
+    res_indiv_kws[1].update({'label': 'yx', 'color': 'g'})
+    kwargs['res_indiv_kws'] = res_indiv_kws
     return plot_res_phase([freqs, freqs], [res[:, 0, 1], res[:, 1, 0]],
                           [phase[:, 0, 1], phase[:, 1, 0]], **kwargs)
 
@@ -43,8 +43,8 @@ def plot_res_phase(freqs, reses, phases, res_es=None, phase_es=None,
                    f0=None, f1=None,
                    layout=None, fig=None, figsize=None, fign=None,
                    res_ax=None, phase_ax=None,
-                   grid="both", legend="res"):
-    """Plot resistivity and phase curves as a function of frequency.
+                   grid='both', legend='res'):
+    '''Plot resistivity and phase curves as a function of frequency.
 
     Args:
         - *freqs*: [freqs_1, freqs_2, ... freqs_n] list of m ndarrays
@@ -60,20 +60,20 @@ def plot_res_phase(freqs, reses, phases, res_es=None, phase_es=None,
         - *res0, res1*: resistivity axis limits
         - *phase0, phase*: phase axis limits
         - *f0, f1*: frequency axis limits
-        - *layout*: "vertical", "horizontal", None. Arrangement of resistivity
+        - *layout*: 'vertical', 'horizontal', None. Arrangement of resistivity
           and phase subplots.
         - *res_ax, phase_ax*: resistivity and phase Axes objects
-        - *grid, legend*: "both", "res", "phase"
+        - *grid, legend*: 'both', 'res', 'phase'
 
     Returns: *res_ax, phase_ax* matplotlib Axes objects
 
-    """
+    '''
     if layout:
-        if layout.startswith("v"): # vertical
+        if layout.startswith('v'): # vertical
             sps = (211, 212)
             if figsize is None:
                 figsize = (5, 10)
-        elif layout.startswith("h"): # horizontal
+        elif layout.startswith('h'): # horizontal
             sps = (121, 122)
             if figsize is None:
                 figsize = (10, 5)
@@ -127,9 +127,9 @@ def plot_res_phase(freqs, reses, phases, res_es=None, phase_es=None,
         del res_kws_i
         del phase_kws_i
 
-    res_ax.set_xscale("log")
-    res_ax.set_yscale("log")
-    phase_ax.set_xscale("log")
+    res_ax.set_xscale('log')
+    res_ax.set_yscale('log')
+    phase_ax.set_xscale('log')
 
     if res0 and res1:
         res_ax.set_ylim(res0, res1)
@@ -149,16 +149,16 @@ def plot_res_phase(freqs, reses, phases, res_es=None, phase_es=None,
         res_ax.grid()
         phase_ax.grid()
 
-    if legend == "res" or "both":
-        res_ax.legend(loc="best")
-    if legend == "phase" or "both":
-        phase_ax.legend(loc="best")
+    if legend == 'res' or 'both':
+        res_ax.legend(loc='best')
+    if legend == 'phase' or 'both':
+        phase_ax.legend(loc='best')
 
-    res_ax.set_ylabel(r"Apparent resistivity [$\Omega$m]")
-    phase_ax.set_ylabel("Phase [deg]")
+    res_ax.set_ylabel(r'Apparent resistivity [$\Omega$m]')
+    phase_ax.set_ylabel('Phase [deg]')
 
-    res_ax.set_xlabel("Frequency [Hz]")
-    phase_ax.set_xlabel("Frequency [Hz]")
+    res_ax.set_xlabel('Frequency [Hz]')
+    phase_ax.set_xlabel('Frequency [Hz]')
 
     return res_ax, phase_ax
 
@@ -166,7 +166,7 @@ def plot_res_phase(freqs, reses, phases, res_es=None, phase_es=None,
 def plot_impedance_tensors(Zs, freqs=None, z0=None, z1=None, f0=None, f1=None,
                            real_kws=None, imag_kws=None, horiz_line_kws=None,
                            fig=None, fign=None, clf=True, normbyfreqs=False):
-    """Plot impedance tensors.
+    '''Plot impedance tensors.
 
     Args:
         - *Zs*: n x 2 x 2 complex ndarray of n impedance tensors
@@ -175,16 +175,16 @@ def plot_impedance_tensors(Zs, freqs=None, z0=None, z1=None, f0=None, f1=None,
         - *f0, f1*: optional limits for frequency x-axis
         - *real_kws, imag_kws, horiz_line_kws*: matplotlib kwargs for plot calls
 
-    """
+    '''
     if not real_kws:
         real_kws = {}
     if not imag_kws:
         imag_kws = {}
     if not horiz_line_kws:
         horiz_line_kws = {}
-    imag_kws.setdefault("ls", "--")
-    horiz_line_kws.setdefault("ls", ":")
-    horiz_line_kws.setdefault("color", "k")
+    imag_kws.setdefault('ls', '--')
+    horiz_line_kws.setdefault('ls', ':')
+    horiz_line_kws.setdefault('color', 'k')
     if not fig:
         fig = plt.figure(fign)
     if clf:
@@ -208,7 +208,7 @@ def plot_impedance_tensors(Zs, freqs=None, z0=None, z1=None, f0=None, f1=None,
         freqs_prov = False
         freqs = range(Zs.shape[0])
     xlim = (np.max(freqs), np.min(freqs))
-    label_dict = {0: "x", 1: "y"}
+    label_dict = {0: 'x', 1: 'y'}
     max_z = -1e10
     min_z = 1e10
     for k, (i, j) in enumerate([(0, 0), (0, 1), (1, 0), (1, 1)]):
@@ -226,11 +226,11 @@ def plot_impedance_tensors(Zs, freqs=None, z0=None, z1=None, f0=None, f1=None,
         grid[k].plot(freqs, Zr, **real_kws)
         grid[k].plot(freqs, Zi, **imag_kws)
         if freqs_prov:
-            grid[k].set_xscale("log")
+            grid[k].set_xscale('log')
         grid[k].set_xlim(*xlim)
         if ylim:
             grid[k].set_ylim(*ylim)
-        title_txt = "%s%s" % (label_dict[i], label_dict[j])
+        title_txt = '%s%s' % (label_dict[i], label_dict[j])
         grid[k].set_title(title_txt)
         grid[k].axhline(0, **horiz_line_kws)
     if normbyfreqs and ylim is None:
@@ -243,24 +243,24 @@ def plot_impedance_tensors(Zs, freqs=None, z0=None, z1=None, f0=None, f1=None,
 
 
 def plot_ptensell(ptensors, freqs=None, scale=1, x0=0, y0=0, centre_dot=False,
-                  xscale=1, color="k", lw=1, fmt="%s", resolution=20, xlabstep=1,
+                  xscale=1, color='k', lw=1, fmt='%s', resolution=20, xlabstep=1,
                   fig=None, fign=None, ax=None, colours=None, rot90=False):
-    """Plot phase tensor ellipses.
+    '''Plot phase tensor ellipses.
 
         - *ptensors*: n x 2 x 2 ndarray of n phase tensors
         - *freqs*: optional n x 1 ndarray of frequencies
-        - *scale*: size of the "unit" circle radius
+        - *scale*: size of the 'unit' circle radius
         - *x0, y0*: location of phase tensor ellipse centre.
         - *centre_dot*: bool
         - *xscale*: control horizontal (frequency axis) spacing of ellipses
         - *resolution*: number of angles to use in drawing the ellipses
 
 
-    """
+    '''
     if ax is None:
         if fig is None:
             fig = plt.figure(fign)#, figsize=(15, 4))
-        ax = fig.add_subplot(111, aspect="equal")
+        ax = fig.add_subplot(111, aspect='equal')
     if not freqs is None:
         sortis = np.asarray(np.argsort(freqs)[::-1], dtype=int)
         freqs = np.asarray(freqs)[sortis]
@@ -281,21 +281,21 @@ def plot_ptensell(ptensors, freqs=None, scale=1, x0=0, y0=0, centre_dot=False,
             y[i] = y2 + y0
         c = colours[pi]
         ax.plot(x[:1], y[:1], marker='.', mfc='k', )
-        ax.plot(x, y, ls="-", color=c, lw=lw)
+        ax.plot(x, y, ls='-', color=c, lw=lw)
         if centre_dot:
-            ax.plot(x0 + pi * xscale, y0, marker=",", color=color)
+            ax.plot(x0 + pi * xscale, y0, marker=',', color=color)
     if not freqs is None:
         indices = range(0, len(ptensors), xlabstep)
         ax.set_xticks(indices)
         ax.set_xticklabels(map(lambda f: fmt % f, freqs[indices]))
-        plt.setp(ax.get_xticklabels(), rotation=rot, ha="right")
+        plt.setp(ax.get_xticklabels(), rotation=rot, ha='right')
 
 
 def plot_ptensell_filled(ptensors, freqs=None, x0=0, y0=0,
                          fillarr=None, cmap=plt.cm.spectral_r,
                          vmin=None, vmax=None,
                          facecolor='none', edgecolor='k',
-                         fmt="%s", xlabstep=1,
+                         fmt='%s', xlabstep=1,
                          adj_pmax=lambda x:x, adj_pmin=lambda x:x,
                          extra_rotation=0,
                          fig=None, fign=None, ax=None, plotkws=None):
@@ -310,7 +310,7 @@ def plot_ptensell_filled(ptensors, freqs=None, x0=0, y0=0,
     if ax is None:
         if fig is None:
             fig = plt.figure(fign)#, figsize=(15, 4))
-        ax = fig.add_subplot(111, aspect="equal")
+        ax = fig.add_subplot(111, aspect='equal')
     if not freqs is None:
         sortis = np.asarray(np.argsort(freqs)[::-1], dtype=int)
         freqs = np.asarray(freqs)[sortis]
@@ -344,11 +344,11 @@ def plot_ptensell_filled(ptensors, freqs=None, x0=0, y0=0,
         indices = range(0, len(ptensors), xlabstep)
         ax.set_xticks(indices)
         ax.set_xticklabels(map(lambda f: fmt % f, freqs[indices]))
-        plt.setp(ax.get_xticklabels(), rotation=rot, ha="right")
+        plt.setp(ax.get_xticklabels(), rotation=rot, ha='right')
 
 
-def animate_ptens(P, fign=1, clf=True, pngs_path=None, axes="math"):
-    """Animate the phase tensor P.
+def animate_ptens(P, fign=1, clf=True, pngs_path=None, axes='math'):
+    '''Animate the phase tensor P.
 
     Plot the product of P with a unit vector as it rotates around the unit
     circle. The unit vector's tip is blue dotted and the product with P is red.
@@ -357,39 +357,39 @@ def animate_ptens(P, fign=1, clf=True, pngs_path=None, axes="math"):
         - *P*: 2 x 2 real ndarray phase tensor
         - *axes*: tuple of which direction
 
-    """
+    '''
     plt.ion()
     fig = plt.figure(fign)
     if clf:
         fig.clf()
-    ax = fig.add_subplot(111, aspect="equal")
+    ax = fig.add_subplot(111, aspect='equal')
     ax.set_xlim(-2, 2)
     ax.set_ylim(-2, 2)
-    ax.axhline(0, color="k")
-    ax.axvline(0, color="k")
+    ax.axhline(0, color='k')
+    ax.axvline(0, color='k')
 
     vrp = np.dot(P, [1., 0.])
     vtp = [1., 0.]
-    logger.debug("animate_ptens: vrp=%s" % vrp)
-    logger.debug("animate_ptens: vtp=%s" % vtp)
+    logger.debug('animate_ptens: vrp=%s' % vrp)
+    logger.debug('animate_ptens: vtp=%s' % vtp)
     for i, t in enumerate(np.linspace(0, 2 * np.pi, 45)):
         vt = np.array([np.cos(t), np.sin(t)])
         vr = np.dot(P, vt)
-        plt.plot([vrp[1], vr[1]], [vrp[0], vr[0]], color="r", ls="-")
-        plt.plot([vtp[1], vt[1]], [vtp[0], vt[0]], color="b", ls=":")
+        plt.plot([vrp[1], vr[1]], [vrp[0], vr[0]], color='r', ls='-')
+        plt.plot([vtp[1], vt[1]], [vtp[0], vt[0]], color='b', ls=':')
         plt.draw()
         if pngs_path:
-            fn = os.path.join(pngs_path, "aniptens_%06.0f.png" % i)
+            fn = os.path.join(pngs_path, 'aniptens_%06.0f.png' % i)
             fig.savefig(fn, dpi=50)
         vrp = vr
         vtp = vt
     plt.ioff()
 
 
-def animate_ptensors(Ps, colour="k", colours=None, lw=1, lws=None, fign=1,
-                     clf=True, pngs_path=None, resolution=45, axes="normal",
-                     unit_colour="g", unit_lw=1, unit_ls=":"):
-    """Animate the phase tensor P.
+def animate_ptensors(Ps, colour='k', colours=None, lw=1, lws=None, fign=1,
+                     clf=True, pngs_path=None, resolution=45, axes='normal',
+                     unit_colour='g', unit_lw=1, unit_ls=':'):
+    '''Animate the phase tensor P.
 
     Plot the product of P with a unit vector as it rotates around the unit
     circle. The unit vector's tip is drawn with *unit_colour*, *unit_ls*, and
@@ -406,10 +406,10 @@ def animate_ptensors(Ps, colour="k", colours=None, lw=1, lws=None, fign=1,
         - *resolution*: number of angles to use. This controls both the speed
           and the smoothness of the plot: 45 is high enough for a decent plot,
           but perhaps a little fast. Higher values will be smoother and slower.
-        - *axes*: "normal" or "reversed" -- "normal" has the first axis of the
+        - *axes*: 'normal' or 'reversed' -- 'normal' has the first axis of the
           phase tensor on the horizontal axis, and the second axis on the
           vertical, with positive angles in a counter-clockwise direction.
-          "reversed" is the compass convention, with the first axis on the
+          'reversed' is the compass convention, with the first axis on the
           vertical axis, the second axis on the horizontal axis, and positive
           angles are clockwise.
         - *unit_colour, unit_ls, unit_lw*: control line style of unit circle
@@ -420,30 +420,30 @@ def animate_ptensors(Ps, colour="k", colours=None, lw=1, lws=None, fign=1,
     that by running ``%pylab`` beforehand (and re-enable it with
     ``%pylab inline``).
 
-    """
+    '''
     plt.ion()
     fig = plt.figure(fign)
     if clf:
         fig.clf()
-    ax = fig.add_subplot(111, aspect="equal")
+    ax = fig.add_subplot(111, aspect='equal')
     ax.set_xlim(-2, 2)
     ax.set_ylim(-2, 2)
-    ax.axhline(0, color="k")
-    ax.axvline(0, color="k")
+    ax.axhline(0, color='k')
+    ax.axvline(0, color='k')
 
     Ps = np.asarray(Ps)
     n = Ps.shape[0]
     if colours is None:
-        colours = "k" * n
+        colours = 'k' * n
     if lws is None:
         lws = [lw] * n
     vrps = np.empty((n, 2))
     for ni in range(n):
         vrps[ni, ...] = np.dot(Ps[ni], [1., 0.])
     vtp = [1., 0.]
-    logger.debug("animate_ptens: vrps=%s" % vrps)
-    logger.debug("animate_ptens: vtp=%s" % vtp)
-    if axes == "normal":
+    logger.debug('animate_ptens: vrps=%s' % vrps)
+    logger.debug('animate_ptens: vtp=%s' % vtp)
+    if axes == 'normal':
         axes_indices = (0, 1)
     else:
         axes_indices = (1, 0)
@@ -457,11 +457,11 @@ def animate_ptensors(Ps, colour="k", colours=None, lw=1, lws=None, fign=1,
             vr = np.dot(Ps[ni], vt)
             plt.plot([vrps[ni, axes_indices[0]], vr[axes_indices[0]]],
                      [vrps[ni, axes_indices[1]], vr[axes_indices[1]]],
-                     color=colours[ni], ls="-", lw=lws[ni])
+                     color=colours[ni], ls='-', lw=lws[ni])
             vrps[ni, ...] = vr
         plt.draw()
         if pngs_path:
-            fn = os.path.join(pngs_path, "aniptens_%06.0f.png" % i)
+            fn = os.path.join(pngs_path, 'aniptens_%06.0f.png' % i)
             fig.savefig(fn, dpi=50)
     plt.ioff()
 
