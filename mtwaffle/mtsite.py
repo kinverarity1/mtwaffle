@@ -1,3 +1,5 @@
+import inspect
+
 import numpy as np
 import attrdict
 
@@ -31,10 +33,6 @@ class Site(attrdict.AttrDict):
         return 1. / self.freqs
 
     @property
-    def appres(self):
-        return mt.appres(self.zs, self.freqs)
-
-    @property
     def phases(self):
         return self.phase_func(self.zs)
     
@@ -50,13 +48,10 @@ class Site(attrdict.AttrDict):
                 return self.zs.real[[Ellipsis] + indices]
             elif key.startswith('zi_'):
                 return self.zs.imag[[Ellipsis] + indices]
-        else:
-            if key == 'ptensazimuths':
-                return mt.ptensazimuths(self.zs)
-            if key == 'ptensors':
-                return mt.ptensors(self.zs)
-            if key == 'normptskew':
-                return mt.normptskew(self.zs)
+        elif key in mt.callables:
+            f = mt.callables[key]
+            f_arg_names = inspect.getargspec(f)[0]
+            return f(*[getattr(self, arg) for arg in f_arg_names])
         return False
 
     def __getattr__(self, key):

@@ -13,36 +13,20 @@ from scipy.interpolate import interp1d
 import scipy.optimize
 import attrdict
 
-logger = logging.getLogger(__name__)
 
+logger = logging.getLogger(__name__)
 RAD2DEG = 180 / np.pi
 
 
-
-
-def show_indices(arr):
-    r'''Return a string showing positive and negative indices for elements of a
-    list.
-
-    For example::
-
-        >>> print(arr)
-        [  1.0883984    1.52735318   2.14333993   3.00775623   4.22079456
-           5.92305539   8.31184382  11.66403876  16.36818533]
-        >>> print('\n'.join(mt.show_indices(arr)))
-        0 [-9] = 1.088
-        1 [-8] = 1.527
-        2 [-7] = 2.143
-        3 [-6] = 3.008
-        4 [-5] = 4.221
-        5 [-4] = 5.923
-        6 [-3] = 8.312
-        7 [-2] = 11.664
-        8 [-1] = 16.368
-
-    '''
-    return ['%d [-%d] = %5.3f' % (i[0], len(arr) - i[0], i[1])
-            for i in zip(range(len(arr)), arr)]
+def mrad2deg(arr):
+    '''Convert milliradians to degrees, and keep it in the first quadrant.'''
+    arr = arr / 1000 / np.pi * 180
+    arr2 = np.empty_like(arr)
+    for i, d in enumerate(arr):
+        while d < -90:
+            d += 180
+        arr2[i] = d
+    return arr2
 
 
 def linear_interp(freqs, Zs, newfreqs, extrapolation='remove'):
@@ -107,13 +91,14 @@ def linear_interp(freqs, Zs, newfreqs, extrapolation='remove'):
 
 
 def between_freqs(freqs, f0=None, f1=None):
-    '''Return impedance tensors between frequencies, inclusive.
+    '''Return indices to freqs for items which are between two extremes (f0 and f1).
 
     Args:
         - *freqs*: n x 1 ndarray
         - *f0, f1*: floats for min and max frequencies
 
     Returns: *indices* to *freqs* array
+
     '''
     freqs = np.asarray(freqs)
     if f1 is None or f1 > np.max(freqs):
@@ -127,19 +112,19 @@ def between_freqs(freqs, f0=None, f1=None):
     return np.asarray(indices)
 
 
-def ohms2mV_km_nT(Z):
-    '''Convert ohms to mV/km/nT.'''
-    return Z * 796.
+def ohms2mV_km_nT(zs):
+    '''Convert impedance tensor(s) from ohms to mV/km/nT.'''
+    return zs * 796.
 
 
-def mV_km_nT2ohms(Z):
-    '''Convert mV/km/nT to ohms'''
-    return Z / 796.
+def mV_km_nT2ohms(zs):
+    '''Convert impedance tensor(s) from mV/km/nT to ohms'''
+    return zs / 796.
 
 
-def inv_imag_sign(Z):
-    '''Invert sign of imaginary parts of Z.'''
-    return Z.real + Z.imag * -1 * 1j
+def inv_imag_sign(zs):
+    '''Invert sign of imaginary parts of impedance tensor(s).'''
+    return zs.real + zs.imag * -1 * 1j
 
 
 def delete(arrays, indices):
@@ -183,18 +168,19 @@ def delete_freq(del_freqs, freqs, arrays, ret_indices=False):
         return np.array(new_freqs), arrays
 
 
-def appres(Zs, freqs):
-    '''Calculate apparent resistivity.
+def appres(zs, freqs):
+    '''Convert impedance tensor(s) (mV/km/nT) to apparent resistivity(s) (ohm.m).
 
     Args:
         - *freqs*: float or n x 1 ndarray
-        - *Zs*: float, 2 x 2 complex ndarray or n x 2 x 2 complex ndarray with
+        - *zs*: float, 2 x 2 complex ndarray or n x 2 x 2 complex ndarray with
           impedance in units of mV/km/nT
 
     Returns: *res*
-        - *res*: same shape as *Zs*
+        - *res*: same shape as *zs*
+
     '''
-    Zs = np.asarray(Zs)
+    Zs = np.asarray(zs)
     try:
         assert Zs.ndim == 3
         res = np.empty_like(Zs, dtype=np.float)
@@ -206,19 +192,19 @@ def appres(Zs, freqs):
         return 0.2 / freqs * np.abs(Zs) ** 2
 
 
-def phase(Zs):
-    '''Phase in the first quadrant.'''
-    return np.arctan(Zs.imag / Zs.real) * RAD2DEG
+def phase(zs):
+    '''Phase of impedance tensor(s) - calculated in the first quadrant.'''
+    return np.arctan(zs.imag / zs.real) * RAD2DEG
 
 
-def phase2(Zs):
-    '''Phase with quadrant information preserved.'''
-    return np.arctan2(Zs.imag, Zs.real) * RAD2DEG
+def phase2(zs):
+    '''Phase of impedance tensor(s) - calculated with quadrant information preserved.'''
+    return np.arctan2(zs.imag, zs.real) * RAD2DEG
 
 
-def phase_abs(Zs):
-    '''Phase forced to be in the first quadrant.'''
-    return np.arctan(np.abs(Zs.imag / Zs.real)) * RAD2DEG
+def phase_abs(zs):
+    '''Phase of impedance tensor(s) - forced into the first quadrant.'''
+    return np.arctan(np.abs(zs.imag / zs.real)) * RAD2DEG
 
 
 def rot(A, theta=0):
@@ -237,33 +223,6 @@ def rot_arr(arrs, theta):
 
     '''
     return np.array([rot(arr, theta) for arr in arrs])
-
-
-def ptensors(Z):
-    '''Phase tensor for either one or multiple impedance tensors.
-
-    Arguments:
-        Z (either 2 x 2 ndarray or [<2x2 ndarray>, <2x2 ndarray>, ...]): impedance tensors
-
-    Returns: phase tensors in the same shape as the argument Z.
-
-    '''
-    Z = np.asarray(Z)
-    if Z.ndim == 2:
-        return np.dot(LA.inv(Z.real), Z.imag)
-    elif Z.ndim == 3:
-        return np.asarray([ptensors(Zi) for Zi in Z])
-
-
-def normptskew(Z):
-    '''Normalised phase tensor skew of Booker (2012).
-    Z can be either 2 x 2 or n x 2 x 2 for n frequencies.'''
-    Z = np.asarray(Z)
-    if Z.ndim == 2:
-        P = ptensors(Z)
-        return np.arctan2(P[0, 1] - P[1, 0], np.trace(P)) * RAD2DEG
-    elif Z.ndim == 3:
-        return np.asarray([normptskew(Zi) for Zi in Z])
 
 
 def lilley_Z1(z):
@@ -312,8 +271,40 @@ def fm9(z):
     return np.abs(z[0,1]) ** 2 + np.abs(z[1,0]) ** 2
 
 
-def ptensaz(Z):
-    '''Find the rotation angle for impedance tensor *Z* such that
+def ptensors(zs):
+    '''Calculate phase tensor(s) for impedance tensor(s) (Caldwell 2004).
+
+    Arguments:
+        zs (either 2 x 2 ndarray or [<2x2 ndarray>, <2x2 ndarray>, ...]): impedance tensors
+
+    Returns: phase tensors in the same shape as the argument Z.
+
+    '''
+    Z = np.asarray(zs)
+    if Z.ndim == 2:
+        return np.dot(LA.inv(Z.real), Z.imag)
+    elif Z.ndim == 3:
+        return np.asarray([ptensors(Zi) for Zi in Z])
+
+
+def ptens_normskew(zs):
+    '''Normalised phase tensor skew(s) of Booker (2012).
+
+    zs can be either 2 x 2 or n x 2 x 2 for n frequencies.
+
+    '''
+    Z = np.asarray(zs)
+    if Z.ndim == 2:
+        P = ptensors(Z)
+        return np.arctan2(P[0, 1] - P[1, 0], np.trace(P)) * RAD2DEG
+    elif Z.ndim == 3:
+        return np.asarray([ptens_normskew(Zi) for Zi in Z])
+
+
+def ptens_azimuth(zs):
+    '''Rotation azimuth of phase tensor(s) such that the diagonals are max-ed & Pxx > Pyy (Caldwell 2004).
+
+    Find the rotation angle for impedance tensor *Z* such that
 
      1. The sum of squares of the off-diagonals of the phase tensor are minimized
         (i.e. coordinate axes parallel to ellipse axes); and
@@ -324,74 +315,84 @@ def ptensaz(Z):
     but then the coordinate system is the reverse.)
 
     '''
-    def offdiagsum(t):
-        x = rot(Z, t)
-        P = ptensors(x)
-        return P[0, 1] ** 2 + P[1, 0] ** 2
+    Z = np.asarray(zs)
+    if Z.ndim == 2:
+        def offdiagsum(t):
+            x = rot(Z, t)
+            P = ptensors(x)
+            return P[0, 1] ** 2 + P[1, 0] ** 2
 
-    xopt = scipy.optimize.fmin(offdiagsum, 0.1, disp=False)
-    angle1 = xopt[0]
-    logger.debug('ptensaz: inital solution=%f' % angle1)
+        xopt = scipy.optimize.fmin(offdiagsum, 0.1, disp=False)
+        angle1 = xopt[0]
+        logger.debug('ptensaz: inital solution=%f' % angle1)
 
-    # We want the angle which aligns the 1st coordinate axis with the major
-    # axis of the ellipse, so need to check the angle 90 degrees away from the
-    # solution.
+        # We want the angle which aligns the 1st coordinate axis with the major
+        # axis of the ellipse, so need to check the angle 90 degrees away from the
+        # solution.
 
-    if angle1 < 0:
-        angle1 = 360 + angle1
-    logger.debug('ptensaz: %f' % angle1)
-    angle2 = angle1 - 90
-    if angle2 < 0:
-        angle2 = 360 + angle2
-    logger.debug('ptensaz: after removal of negative angles=%f, %f' % (angle1, angle2))
+        if angle1 < 0:
+            angle1 = 360 + angle1
+        logger.debug('ptensaz: %f' % angle1)
+        angle2 = angle1 - 90
+        if angle2 < 0:
+            angle2 = 360 + angle2
+        logger.debug('ptensaz: after removal of negative angles=%f, %f' % (angle1, angle2))
 
-    # We want the smaller angle, between 0 and 180 degrees:
+        # We want the smaller angle, between 0 and 180 degrees:
 
-    if angle1 > 180:
-        angle1 -= 180
-    if angle2 > 180:
-        angle2 -= 180
-    logger.debug('ptensaz: after adjustment to first 2 quadrants=%f, %f' % (angle1, angle2))
+        if angle1 > 180:
+            angle1 -= 180
+        if angle2 > 180:
+            angle2 -= 180
+        logger.debug('ptensaz: after adjustment to first 2 quadrants=%f, %f' % (angle1, angle2))
 
-    ptens1 = ptensors(rot(Z, angle1))
-    ptens2 = ptensors(rot(Z, angle2))
-    if ptens2[0, 0] > ptens1[0, 0]:
-        return angle2
-    else:
-        return angle1
-
-
-def ptensazimuths(Zs):
-    '''Return phase tensor azimuths for several impedance tensors. See
-    :func:`ptensaz`.'''
-    return np.array([ptensaz(Z) for Z in Zs])
+        ptens1 = ptensors(rot(Z, angle1))
+        ptens2 = ptensors(rot(Z, angle2))
+        if ptens2[0, 0] > ptens1[0, 0]:
+            return angle2
+        else:
+            return angle1
+    elif Z.ndim == 3:
+        return np.array([ptens_azimuth(zi) for zi in Z])
 
 
-def ptens_alpha(P):
-    return 0.5 * np.arctan2((P[0,1] + P[1,0]), (P[0,0] - P[1,1])) * 180 / np.pi
+def ptens_alpha(ptensors):
+    '''Phase tensor(s) alpha angle (Caldwell 2004).'''
+    P = np.asarray(ptensors)
+    if P.ndim == 2:
+        return 0.5 * np.arctan2((P[0,1] + P[1,0]), (P[0,0] - P[1,1])) * 180 / np.pi
+    elif P.ndim == 3:
+        return np.array([ptens_alpha(pi) for pi in P])
 
 
-def ptens_beta(P):
-    return 0.5 * np.arctan2((P[0,1] - P[1,0]), (P[0,0] + P[1,1])) * 180 / np.pi
+def ptens_beta(ptensors):
+    '''Phase tensor(s) beta angle (Caldwell 2004).'''
+    P = np.asarray(ptensors)
+    if P.ndim == 2:
+        return 0.5 * np.arctan2((P[0,1] - P[1,0]), (P[0,0] + P[1,1])) * 180 / np.pi
+    elif P.ndim == 3:
+        return np.array([ptens_beta(pi) for pi in P])
 
 
-def ptens_alphas(ptensors):
-    return np.array([ptens_alpha(ptens) for ptens in ptensors])
-
-
-def ptens_betas(ptensors):
-    return np.array([ptens_beta(ptens) for ptens in ptensors])
-
-
-def ptens_min(P):
-    return (np.sqrt(ptens1(P)**2 + ptens3(P)**2)
-            - np.sqrt(ptens1(P)**2 + ptens3(P)**2 - ptens2(P)**2))
+def ptens_min(ptensors):
+    '''Minimum angle of phase tensor(s) (Caldwell 2004, A8).'''
+    P = np.asarray(ptensors)
+    if P.ndim == 2:
+        return (np.sqrt(ptens1(P)**2 + ptens3(P)**2)
+                - np.sqrt(ptens1(P)**2 + ptens3(P)**2 - ptens2(P)**2))
+    elif P.ndim == 3:
+        return np.array([ptens_min(pi) for pi in P])
 
 
 def ptens_max(P):
-    return (np.sqrt(ptens1(P)**2 + ptens3(P)**2)
-            + np.sqrt(ptens1(P)**2 + ptens3(P)**2 - ptens2(P)**2))
-
+    '''Maximum angle of phase tensor(s) (Caldwell 2004, A9).'''
+    P = np.asarray(ptensors)
+    if P.ndim == 2:
+        return (np.sqrt(ptens1(P)**2 + ptens3(P)**2)
+                + np.sqrt(ptens1(P)**2 + ptens3(P)**2 - ptens2(P)**2))
+    elif P.ndim == 3:
+        return np.array([ptens_max(pi) for pi in P])
+    
 
 def ptens1(P):
     return ptens_tr(P) / 2.
@@ -409,15 +410,21 @@ def ptens_tr(P):
     return P[0, 0] + P[1, 1]
 
 
-def ptens_sk(P):
-    return P[0, 1] - P[1, 0]
+def ptens_skew(ptensors):
+    '''Skew angle of phase tensor(s) (Caldwell 2004).'''
+    P = np.asarray(ptensors)
+    if P.ndim == 2:
+        return P[0, 1] - P[1, 0]
+    elif P.ndim == 3:
+        return np.array([ptens_skew(pi) for pi in ptensors])
 
 
 def ptens_det(P):
     return (P[0, 0] * P[1, 1]) - (P[0, 1] * P[1, 0])
 
 
-def ptens_theta(P):
+def ptens_theta(ptensors):
+    '''Theta angle from phase tensor(s).'''
     return ptens_alpha(P) - ptens_beta(P)
 
 
@@ -426,16 +433,7 @@ def ptens_ppspl(P):
     p1 = np.rad2deg(np.arctan(ptens_max(P)))
     p0 = np.rad2deg(np.arctan(ptens_min(P)))
     return p1 - p0
-
-
-ptskew = np.frompyfunc(ptens_sk, 1, 1)
-ptmax = np.frompyfunc(ptens_max, 1, 1)
-ptmin = np.frompyfunc(ptens_min, 1, 1)
-ptalpha = np.frompyfunc(ptens_alpha, 1, 1)
-ptbeta = np.frompyfunc(ptens_beta, 1, 1)
-pttheta = np.frompyfunc(ptens_theta, 1, 1)
-ptppspl = np.frompyfunc(ptens_ppspl, 1, 1)
-
+    
 
 def ptens_vectors(P, n_thetas=45):
     '''Return phase tensor vectors.
@@ -478,10 +476,10 @@ def ptens_vectors(P, n_thetas=45):
 #         vf = fwd_vecs[k]
 
 
-def normfreqs(Z, freqs):
-    '''Normalise Z by multiplying by the square root of the period.'''
-    Z = Z.copy()
-    factor = np.sqrt(1 / freqs)
+def normfreqs(zs, freqs):
+    '''Normalise impedance tensor(s) magnitude by multiplying by sqrt(period).'''
+    Z = np.asarray(zs).copy()
+    factor = np.sqrt(1. / freqs)
     if Z.ndim == 3:
         for i, j in [(0, 0), (0, 1), (1, 0), (1, 1)]:
             Z[:, i, j] = Z[:, i, j].real * factor + Z[:, i, j].imag * factor * 1j
@@ -490,8 +488,8 @@ def normfreqs(Z, freqs):
     return Z
 
 
-def bostick(freqs, res, phase):
-    '''Bostick transform.
+def bostick(freqs, appres, phases):
+    '''Bostick transform of impedance tensor(s) - returns tuple (depths, resistivities).
 
     Args:
         - *freqs*: n x 1 ndarray
@@ -504,18 +502,18 @@ def bostick(freqs, res, phase):
 
     '''
     freqs = np.asarray(freqs)
-    res = np.asarray(res)
-    phase = np.asarray(phase)
+    appres = np.asarray(appres)
+    phases = np.asarray(phases)
     n = len(freqs)
-    if res.shape == (n, 2, 2):
+    if appres.shape == (n, 2, 2):
         bz = np.empty((n, 2, 2))
         for i in (0, 1):
             for j in (0, 1):
-                bz[:, i, j] = 355.4 * np.sqrt(res[:, i, j] / freqs)
+                bz[:, i, j] = 355.4 * np.sqrt(appres[:, i, j] / freqs)
     else:
-        assert res.shape == freqs.shape
-        bz = 355.4 * np.sqrt(res / freqs)
-    br = res * (3.1416 / (2 * np.deg2rad(phase)) - 1)
+        assert appres.shape == freqs.shape
+        bz = 355.4 * np.sqrt(appres / freqs)
+    br = appres * (3.1416 / (2 * np.deg2rad(phases)) - 1)
     return bz, br
 
 
@@ -528,8 +526,13 @@ def z12b(z, b):
 
 
 def cgamma(Z, out_unit='deg'):
-    '''see Lilley 1998'''
+    '''Invariant measure of 3D-ness of impedance tensor (Lilley 1998, eq. 37).'''
     return catan2(Z[1, 1] + Z[0, 0], Z[0, 1] - Z[1, 0], out_unit)
+
+
+def cgammas(zs, out_unit='deg'):
+    '''Invariant measure of 3D-ness of impedance tensors (Lilley 1998, eq. 37).'''
+    return np.array([cgamma(Z, out_unit) for Z in Zs])
 
 
 def pos_quads(carr, units='deg'):
@@ -550,18 +553,22 @@ def pos_quads(carr, units='deg'):
 
 
 def catan2(num, den, out_unit='deg'):
-    '''Complex arctan2 function'''
+    '''Complex arctan2 function.
+
+    Arguments:
+        num (float): numerator
+        den (float): denominator
+        out_unit (str): either 'deg' or 'rad'
+
+    '''
     real = np.arctan2(num.real, den.real)
     imag = np.arctan2(num.imag, den.imag)
     if out_unit == 'deg':
         real = real * 180 / np.pi
         imag = imag * 180 / np.pi
+    else:
+        assert out_unit == 'rad'
     return real + imag * 1j
-
-
-def cgammas(Zs, out_unit='deg'):
-    '''see Lilley 1998'''
-    return np.array([cgamma(Z, out_unit) for Z in Zs])
 
 
 lzdd = lambda z: z[1, 1] - z[0, 0]
@@ -571,17 +578,41 @@ lzod = lambda z: z[0, 1] - z[1, 0]
 
 
 def theta_e(z, out_unit='deg'):
-    '''Electric strike. See Lilley 1998.'''
+    '''Electric strike of impedance tensor (Lilley 1998).
+
+    Arguments:
+        out_unit (str): 'deg' or 'rad'
+
+    '''
     return 0.5 * (catan2(lzdd(z), lzos(z), out_unit) + catan2(lzds(z), lzod(z), out_unit))
 
 
 def theta_h(z, out_unit='deg'):
-    '''Magnetic strike. See Lilley 1998.'''
+    '''Magnetic strike of impedance tensor (Lilley 1998).
+
+    Arguments:
+        out_unit (str): 'deg' or 'rad'
+    
+    '''
     return 0.5 * (catan2(lzdd(z), lzos(z), out_unit) - catan2(lzds(z), lzod(z), out_unit))
 
 
-theta_es = lambda zs: np.array([theta_e(z) for z in zs])
-theta_hs = lambda zs: np.array([theta_h(z) for z in zs])
+def theta_es(zs, **kwargs):
+    '''Electric strike of impedance tensors (Lilley 1998).
+
+    See theta_e function for keyword arguments.
+
+    '''
+    return np.array([theta_e(z) for z in zs])
+
+
+def theta_hs(zs, **kwargs):
+    '''Magnetic strike of impedance tensors (Lilley 1998).
+
+    See theta_h function for keyword arguments.
+
+    '''
+    return np.array([theta_h(z) for z in zs])
 
 
 class L(object):
@@ -605,13 +636,6 @@ def t12b(z, b):
     return z[0, 1] * (np.cos(b) ** 2) + (z[1, 1] - z[0, 0]) * np.cos(b) * np.sin(b) - z[1, 0] * (np.sin(b) ** 2)
 
 
-def mrad2deg(arr):
-    '''Convert milliradians to degrees, and keep it in the first quadrant.'''
-    arr = arr / 1000 / np.pi * 180
-    arr2 = np.empty_like(arr)
-    for i, d in enumerate(arr):
-        while d < -90:
-            d += 180
-        arr2[i] = d
-    return arr2
 
+
+callables = {fname: globals()[fname] for fname in dir() if callable(globals()[fname])}
