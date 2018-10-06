@@ -468,7 +468,7 @@ def animate_ptensors(Ps, colour="k", colours=None, lw=1, lws=None, fign=1,
 
 def plot_mohr_imp(freqs, zs, axreal=None, aximag=None,
               cmap=plt.cm.jet_r,
-              fig=None, fign=None, clf=True):
+              fig=None, fign=None, clf=True, title=None):
     '''Plot Mohr circles
 
     Args:
@@ -480,6 +480,7 @@ def plot_mohr_imp(freqs, zs, axreal=None, aximag=None,
         fig (matplotlib Figure): (optional)
         fign (int): matplotlib figure number (optional)
         clf (bool): clear existing matplotlib figure (optional)
+        title (str): figure title (optional)
 
     Returns: (axreal, aximag): tuple of the matplotlib Axes
 
@@ -491,6 +492,8 @@ def plot_mohr_imp(freqs, zs, axreal=None, aximag=None,
             fig.clf()
         axreal = fig.add_subplot(121, aspect='equal')
         aximag = fig.add_subplot(122, aspect='equal', sharex=axreal, sharey=axreal)
+        if title:
+            fig.suptitle(title)
     axreal.set_title('Real')
     aximag.set_title('Imag')
     angles = np.linspace(0, np.pi * 1.0, 50)

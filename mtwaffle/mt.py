@@ -28,13 +28,16 @@ class Site(attrdict.AttrDict):
         'yy': [1, 1]
     }
 
-    def __init__(self, freqs, zs, phase_func=None):
+    def __init__(self, freqs, zs, name='', phase_func=None, **kwargs):
         super(Site, self).__init__()
         self.freqs = np.asarray(freqs)
         self.zs = np.asarray(zs)
+        self.name = name
         if phase_func is None:
             phase_func = phase
         self.phase_func = phase_func
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
     @property
     def res(self):
@@ -108,6 +111,7 @@ class Site(attrdict.AttrDict):
 
     def plot_mohr_imp(self, **kwargs):
         from mtwaffle import graphs
+        kwargs['title'] = kwargs.get('title', self.name)
         return graphs.plot_mohr_imp(
             self.freqs, self.zs, **kwargs
         )
