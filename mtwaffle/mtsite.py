@@ -1,4 +1,5 @@
 import inspect
+import sys
 
 import numpy as np
 import attrdict
@@ -16,6 +17,8 @@ class Site(attrdict.AttrDict):
         'yx': [1, 0],
         'yy': [1, 1]
     }
+
+    EXCLUDED_CALLABLES = ('between_freqs', )
 
     def __init__(self, freqs, zs, name='', phase_func=None, **kwargs):
         super(attrdict.AttrDict, self).__init__()
@@ -35,6 +38,53 @@ class Site(attrdict.AttrDict):
     @property
     def phases(self):
         return self.phase_func(self.zs)
+
+    def inspect_mt_callable(self, name):
+        f = mt.callables[name]
+        argnames = [     # Find arguments of callable from mtwaffle.mt
+            p.name for p in inspect.signature(f).parameters.values()
+            if p.kind == p.POSITIONAL_OR_KEYWORD and p.default is p.empty
+        ]
+        return f, argnames
+
+    def help(self, output=sys.stdout):
+        '''Print a list of the attributes which are available.'''
+        output.write('''
+Attributes of mtwaffle.mtsite.Site are calculated using functions from the mtwaffle.mt module:
+
+ mtsite.Site         mtwaffle.mt function
+  attribute       (args are Site attributes)                  Function description
+--------------  ------------------------------  ----------------------------------------------
+''')
+        label = lambda f: f.__doc__.splitlines()[0] if f.__doc__ else 'MISSING DOC'
+        fnames = []
+        for fname, f in mt.callables.items():
+            try:
+                getattr(self, fname)
+            except:
+                pass
+            else:
+                fnames.append(fname)
+        for fname in fnames:
+            f, argnames = self.inspect_mt_callable(fname)
+            cname = self.__class__.__name__
+            argsig = ', '.join(['{}'.format(arg) for arg in argnames])
+            source = '{}({})'.format(fname, argsig)
+            
+            label_attr = '{}'.format(fname.ljust(14))
+            label_source = source.ljust(30)
+            label_help = label(f)
+            output.write('{}  {}  {}\n'.format(label_attr, label_source, label_help))
+
+            # print('{fname}({sig})'.format(
+            #     fname=fname, sig=', '.join([
+            #         '{c}.{a}'.format(c=self.__class__.__name__, a=arg) for arg in f_arg_names])))
+            # output.write('{}.{}  --  {}\n'.format(
+            #     self.__class__.__name__,
+            #     fname.ljust(max([len(fi) for fi in fnames])), 
+            #     doc(mt.callables[fname])
+            #     )
+            # )
     
     def get_property(self, key):
         # Is the key ending with xx, xy, yx, or yy?
@@ -48,10 +98,13 @@ class Site(attrdict.AttrDict):
                 return self.zs.real[[Ellipsis] + indices]
             elif key.startswith('zi_'):
                 return self.zs.imag[[Ellipsis] + indices]
-        elif key in mt.callables:
-            f = mt.callables[key]
-            f_arg_names = inspect.getargspec(f)[0]
-            return f(*[getattr(self, arg) for arg in f_arg_names])
+        
+        # See if we can complete a function from mtwaffle.mt using the
+        # existing attributes in this Site:
+
+        elif key in mt.callables and not key in self.EXCLUDED_CALLABLES:
+            f, argnames = self.inspect_mt_callable(key)
+            return f(*[getattr(self, arg) for arg in argnames])
         return False
 
     def __getattr__(self, key):
@@ -81,27 +134,27 @@ class Site(attrdict.AttrDict):
             )
         return graphs.plot_res_phase(*args, **kwargs)
 
-    def plot_impedance_tensors(self, **kwargs):
+    def plot_impedance_tensors(self, *args, **kwargs):
         return graphs.plot_impedance_tensors(
             self.zs, self.freqs, **kwargs)
 
-    def plot_ptensell(self, **kwargs):
+    def plot_ptensell(self, *args, **kwargs):
         return graphs.plot_ptensell(
-            self.ptens, self.freqs, **kwargs
+            self.ptensors, self.freqs, *args, **kwargs
         )
 
-    def plot_ptensell_filled(self, **kwargs):
+    def plot_ptensell_filled(self, *args, **kwargs):
         return graphs.plot_ptensell_filled(
-            self.ptens, self.freqs, **kwargs
+            self.ptensors, self.freqs, *args, **kwargs
         )
 
-    def plot_mohr_imp(self, **kwargs):
+    def plot_mohr_imp(self, *args, **kwargs):
         kwargs['title'] = kwargs.get('title', self.name)
         return graphs.plot_mohr_imp(
-            self.zs, self.freqs, **kwargs
+            self.zs, self.freqs, *args, **kwargs
         )
 
-    def plot_mohr_ptensor(self, **kwargs):
+    def plot_mohr_ptensor(self, *args, **kwargs):
         return graphs.plot_mohr_ptensor(
-            self.ptens, self.freqs, **kwargs
+            self.ptensors, self.freqs, *args, **kwargs
         )

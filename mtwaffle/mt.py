@@ -113,17 +113,17 @@ def between_freqs(freqs, f0=None, f1=None):
 
 
 def ohms2mV_km_nT(zs):
-    '''Convert impedance tensor(s) from ohms to mV/km/nT.'''
+    '''Convert imp. tensor(s) from ohms to mV/km/nT.'''
     return zs * 796.
 
 
 def mV_km_nT2ohms(zs):
-    '''Convert impedance tensor(s) from mV/km/nT to ohms'''
+    '''Convert imp. tensor(s) from mV/km/nT to ohms'''
     return zs / 796.
 
 
 def inv_imag_sign(zs):
-    '''Invert sign of imaginary parts of impedance tensor(s).'''
+    '''Invert sign of imaginary parts of imp. tensor(s).'''
     return zs.real + zs.imag * -1 * 1j
 
 
@@ -169,7 +169,7 @@ def delete_freq(del_freqs, freqs, arrays, ret_indices=False):
 
 
 def appres(zs, freqs):
-    '''Convert impedance tensor(s) (mV/km/nT) to apparent resistivity(s) (ohm.m).
+    '''Convert imp. tensor(s) (mV/km/nT) to apparent resistivity(s) (ohm.m).
 
     Args:
         - *freqs*: float or n x 1 ndarray
@@ -193,17 +193,17 @@ def appres(zs, freqs):
 
 
 def phase(zs):
-    '''Phase of impedance tensor(s) - calculated in the first quadrant.'''
+    '''Phase of imp. tensor(s) - calculated in the first quadrant.'''
     return np.arctan(zs.imag / zs.real) * RAD2DEG
 
 
 def phase2(zs):
-    '''Phase of impedance tensor(s) - calculated with quadrant information preserved.'''
+    '''Phase of imp. tensor(s) - calculated with quadrant information preserved.'''
     return np.arctan2(zs.imag, zs.real) * RAD2DEG
 
 
 def phase_abs(zs):
-    '''Phase of impedance tensor(s) - forced into the first quadrant.'''
+    '''Phase of imp. tensor(s) - forced into the first quadrant.'''
     return np.arctan(np.abs(zs.imag / zs.real)) * RAD2DEG
 
 
@@ -272,7 +272,7 @@ def fm9(z):
 
 
 def ptensors(zs):
-    '''Calculate phase tensor(s) for impedance tensor(s) (Caldwell 2004).
+    '''Calculate phase tensor(s) for imp. tensor(s) (Caldwell 2004).
 
     Arguments:
         zs (either 2 x 2 ndarray or [<2x2 ndarray>, <2x2 ndarray>, ...]): impedance tensors
@@ -302,7 +302,7 @@ def ptens_normskew(zs):
 
 
 def ptens_azimuth(zs):
-    '''Rotation azimuth of phase tensor(s) such that the diagonals are max-ed & Pxx > Pyy (Caldwell 2004).
+    '''Rotation azimuth of phase tensor(s) such that diags are max-ed & Pxx > Pyy.
 
     Find the rotation angle for impedance tensor *Z* such that
 
@@ -384,7 +384,7 @@ def ptens_min(ptensors):
         return np.array([ptens_min(pi) for pi in P])
 
 
-def ptens_max(P):
+def ptens_max(ptensors):
     '''Maximum angle of phase tensor(s) (Caldwell 2004, A9).'''
     P = np.asarray(ptensors)
     if P.ndim == 2:
@@ -403,7 +403,7 @@ def ptens2(P):
 
 
 def ptens3(P):
-    return ptens_sk(P) / 2.
+    return ptens_skew(P) / 2.
 
 
 def ptens_tr(P):
@@ -433,25 +433,36 @@ def ptens_ppspl(P):
     p1 = np.rad2deg(np.arctan(ptens_max(P)))
     p0 = np.rad2deg(np.arctan(ptens_min(P)))
     return p1 - p0
-    
 
-def ptens_vectors(P, n_thetas=45):
-    '''Return phase tensor vectors.
+
+def ptens_vectors(ptensors, n_thetas=45):
+    '''Return n_theta vectors for phase tensor/s around the unit circle.
 
     For each vector v_u on the unit circle (there are n_thetas of these vectors)
     calculate P dot v_u and return the family of the resulting vectors, together
     with the thetas
 
-    Returns:
-        - *thetas* (on the unit circle)
-        - *vecs*: n_thetas x 2 ndarray
+    Returns: tuple (thetas, vecs)
+        thetas (ndarray): the angles on the unit circle. Shape is (n_thetas).
+        vecs (ndarray): the vectors. If ptensors.shape == (2, 2) then vecs.shape
+            == (n_thetas, 2); if ptensors.shape == (m, 2, 2) then vecs.shape ==
+            (m, n_thetas, 2).
+
     '''
-    thetas = np.linspace(0, 2 * np.pi, n_thetas)
-    vecs = np.empty((n_thetas, 2))
-    for i, t in enumerate(thetas):
-        vunit = np.array([np.cos(t), np.sin(t)])
-        vecs[i, ...] = np.dot(P, vunit)
-    return thetas, vecs
+    P = np.asarray(ptensors)
+    if P.ndim == 2:
+        thetas = np.linspace(0, 2 * np.pi, n_thetas)
+        vecs = np.empty((n_thetas, 2))
+        for i, t in enumerate(thetas):
+            vunit = np.array([np.cos(t), np.sin(t)])
+            vecs[i, ...] = np.dot(P, vunit)
+        return thetas, vecs
+    elif P.ndim == 3:
+        vecs_list = []
+        for pi in P:
+            thetas, vecs = ptens_vectors(pi)
+            vecs_list.append(vecs)
+        return thetas, np.asarray(vecs_list)
 
 
 # def ptens_misfit(thetas, obs_vecs, fwd_vecs):
@@ -477,7 +488,7 @@ def ptens_vectors(P, n_thetas=45):
 
 
 def normfreqs(zs, freqs):
-    '''Normalise impedance tensor(s) magnitude by multiplying by sqrt(period).'''
+    '''Normalise imp. tensor(s) magnitude by multiplying by sqrt(period).'''
     Z = np.asarray(zs).copy()
     factor = np.sqrt(1. / freqs)
     if Z.ndim == 3:
@@ -489,7 +500,7 @@ def normfreqs(zs, freqs):
 
 
 def bostick(freqs, appres, phases):
-    '''Bostick transform of impedance tensor(s) - returns tuple (depths, resistivities).
+    '''Bostick transform of imp. tensor(s) - returns tuple (depths, resistivities).
 
     Args:
         - *freqs*: n x 1 ndarray
@@ -514,7 +525,7 @@ def bostick(freqs, appres, phases):
         assert appres.shape == freqs.shape
         bz = 355.4 * np.sqrt(appres / freqs)
     br = appres * (3.1416 / (2 * np.deg2rad(phases)) - 1)
-    return bz, br
+    return np.array([bz, br])
 
 
 def z11b(z, b):
