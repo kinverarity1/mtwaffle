@@ -498,17 +498,21 @@ def plot_mohr_imp(freqs, zs, axreal=None, aximag=None,
     aximag.set_title('Imag')
     angles = np.linspace(0, np.pi * 1.0, 50)
     freq_0_line = None
+    for ax in (axreal, aximag):
+        ax.axvline(0, color='gray')
+        ax.axhline(0, color='gray')
     for fi, freq in enumerate(freqs):
         z = zs[fi]
         zr = z.real
         zi = z.imag
-        c = cmap(float(fi) / len(freqs))
+        if cmap is None:
+            c = 'k'
+        else:
+            c = cmap(float(fi) / len(freqs))
         for ax, zp in zip((axreal, aximag), (zr, zi)):
             line, = ax.plot([mt.z12b(zp, a) for a in angles], [mt.z11b(zp, a) for a in angles], color=c)
             ax.plot([mt.lilley_Z4(zp), mt.z12b(zp, 0)], [mt.lilley_Z1(zp), mt.z11b(zp, 0)], ls='-', color=c)
             ax.plot(mt.lilley_Z4(zp), mt.lilley_Z1(zp), marker='o', mfc=c, mec=c, markersize=2)
-            ax.axvline(0, color='gray')
-            ax.axhline(0, color='gray')
         if fi == 0:
             freq_0_line = line
     if axreal.get_xlim()[0] > 0:
@@ -517,8 +521,9 @@ def plot_mohr_imp(freqs, zs, axreal=None, aximag=None,
         aximag.set_xlim(0, None)
     legreal = axreal.legend((freq_0_line, line), ['%s Hz' % freqs[0], '%s Hz' % freqs[-1]], loc=2, numpoints=2)
     text_0, text_1 = legreal.get_texts()
-    text_0.set_color(cmap(0))
-    text_1.set_color(cmap(1 - 1e-10))
+    if cmap:
+        text_0.set_color(cmap(0))
+        text_1.set_color(cmap(1 - 1e-10))
     return axreal, aximag
 
 
