@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 
-def plot_res_phase2(freqs, Zs, phase_func=None, **kwargs):
+def plot_res_phase2(Zs, freqs, phase_func=None, **kwargs):
     '''Quick wrapper for plotting the two modes resistivity and phase.
 
     Args:
@@ -466,7 +466,7 @@ def animate_ptensors(Ps, colour='k', colours=None, lw=1, lws=None, fign=1,
     plt.ioff()
 
 
-def plot_mohr_imp(freqs, zs, axreal=None, aximag=None,
+def plot_mohr_imp(zs, freqs, axreal=None, aximag=None,
               cmap=plt.cm.jet_r,
               fig=None, fign=None, clf=True, title=None):
     '''Plot Mohr circles
@@ -527,7 +527,7 @@ def plot_mohr_imp(freqs, zs, axreal=None, aximag=None,
     return axreal, aximag
 
 
-def plot_mohr_ptensor(freqs, ptensors, cmap=plt.cm.jet, ax=None, fig=None, fign=None, clf=True):
+def plot_mohr_ptensor(ptensors, freqs, cmap=plt.cm.jet, ax=None, fig=None, fign=None, clf=True):
     if ax is None:
         if fig is None:
             fig = plt.figure(fign)

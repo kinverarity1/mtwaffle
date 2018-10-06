@@ -4,8 +4,7 @@ import traceback
 
 import numpy as np
 
-from mtwaffle import mt
-from mtwaffle import utils
+from mtwaffle import mtsite
 
 
 logger = logging.getLogger(__name__)
@@ -102,7 +101,7 @@ def read_edi(fn, name=None, **kwargs):
         except:
             name = fn
     freqs, zs, zes = read_mt_data(edi_contents, **kwargs)
-    return mt.Site(freqs, zs, name=name, datasource={
+    return mtsite.Site(freqs, zs, name=name, datasource={
         'EDI': edi_contents
     })
 

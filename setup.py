@@ -14,8 +14,8 @@ from os import path
 
 from distutils.core import setup
 
-__version__ = '0.3'
-
+with open(os.path.join(os.path.dirname(__file__), 'mtwaffle', '__version__.py'), 'r') as f:
+    exec(f.read())
 
 with open(path.join(path.dirname(__file__), 'requirements.txt'), 'r') as f:
     requirements = f.read().splitlines()

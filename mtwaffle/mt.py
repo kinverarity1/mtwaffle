@@ -19,110 +19,6 @@ RAD2DEG = 180 / np.pi
 
 
 
-class Site(attrdict.AttrDict):
-
-    index_map = {
-        'xx': [0, 0],
-        'xy': [0, 1],
-        'yx': [1, 0],
-        'yy': [1, 1]
-    }
-
-    def __init__(self, freqs, zs, name='', phase_func=None, **kwargs):
-        super(Site, self).__init__()
-        self.freqs = np.asarray(freqs)
-        self.zs = np.asarray(zs)
-        self.name = name
-        if phase_func is None:
-            phase_func = phase
-        self.phase_func = phase_func
-        for key, value in kwargs.items():
-            setattr(self, key, value)
-
-    @property
-    def res(self):
-        return appres(self.freqs, self.zs)
-
-    def get_property(self, key):
-        # Is the key ending with xx, xy, yx, or yy?
-        if key[-2:] in self.index_map:
-            indices = self.index_map[key[-2:]]
-            if key.startswith('res_'):
-                return self.res[[Ellipsis] + indices]
-            elif key.startswith('phase_'):
-                return self.phase_func[[Ellipsis] + indices]
-            elif key.startswith('zr_'):
-                return self.zs.real[[Ellipsis] + indices]
-            elif key.startswith('zi_'):
-                return self.zs.imag[[Ellipsis] + indices]
-        else:
-            if key == 'ptensaz':
-                return ptensazimuths(self.zs)
-            if key == 'ptens':
-                return ptens(self.zs)
-            if key == 'normptskew':
-                return normptskew(self.zs)
-        return False
-
-    def __getattr__(self, key):
-        value = self.get_property(key)
-        if value is False:
-            return super(Site, self).__getattr__(key)
-        else:
-            return value
-
-    def __getitem__(self, key):
-        value = self.get_property(key)
-        if value is False:
-            return super(Site, self).__getitem__(key)
-        else:
-            return value
-
-    def plot_res_phase(self, **kwargs):
-        from mtwaffle import graphs
-        args = (
-            (self.freqs, self.freqs),
-            (self.res_xy, self.res_yx),
-            (self.phase_xy, self.phase_yx),
-        )
-        if not 'res_indiv_kws' in kwargs:
-            kwargs['res_indiv_kws'] = (
-                {'label': 'xy', 'color': 'b'},
-                {'label': 'yx', 'color': 'g'},
-            )
-        return graphs.plot_res_phase(*args, **kwargs)
-
-    def plot_impedance_tensors(self, **kwargs):
-        from mtwaffle import graphs
-        return graphs.plot_impedance_tensors(
-            self.zs, self.freqs, **kwargs)
-
-    def plot_ptensell(self, **kwargs):
-        from mtwaffle import graphs
-        return graphs.plot_ptensell(
-            self.ptens, self.freqs, **kwargs
-        )
-
-    def plot_ptensell_filled(self, **kwargs):
-        from mtwaffle import graphs
-        return graphs.plot_ptensell_filled(
-            self.ptens, self.freqs, **kwargs
-        )
-
-    def plot_mohr_imp(self, **kwargs):
-        from mtwaffle import graphs
-        kwargs['title'] = kwargs.get('title', self.name)
-        return graphs.plot_mohr_imp(
-            self.freqs, self.zs, **kwargs
-        )
-
-    def plot_mohr_ptensor(self, **kwargs):
-        from mtwaffle import graphs
-        return graphs.plot_mohr_ptensor(
-            self.freqs, self.ptens, **kwargs
-        )
-
-
 
 def show_indices(arr):
     r'''Return a string showing positive and negative indices for elements of a
@@ -287,7 +183,7 @@ def delete_freq(del_freqs, freqs, arrays, ret_indices=False):
         return np.array(new_freqs), arrays
 
 
-def appres(freqs, Zs):
+def appres(Zs, freqs):
     '''Calculate apparent resistivity.
 
     Args:
@@ -343,7 +239,7 @@ def rot_arr(arrs, theta):
     return np.array([rot(arr, theta) for arr in arrs])
 
 
-def ptens(Z):
+def ptensors(Z):
     '''Phase tensor for either one or multiple impedance tensors.
 
     Arguments:
@@ -356,7 +252,7 @@ def ptens(Z):
     if Z.ndim == 2:
         return np.dot(LA.inv(Z.real), Z.imag)
     elif Z.ndim == 3:
-        return np.asarray([ptens(Zi) for Zi in Z])
+        return np.asarray([ptensors(Zi) for Zi in Z])
 
 
 def normptskew(Z):
@@ -364,7 +260,7 @@ def normptskew(Z):
     Z can be either 2 x 2 or n x 2 x 2 for n frequencies.'''
     Z = np.asarray(Z)
     if Z.ndim == 2:
-        P = ptens(Z)
+        P = ptensors(Z)
         return np.arctan2(P[0, 1] - P[1, 0], np.trace(P)) * RAD2DEG
     elif Z.ndim == 3:
         return np.asarray([normptskew(Zi) for Zi in Z])
@@ -430,7 +326,7 @@ def ptensaz(Z):
     '''
     def offdiagsum(t):
         x = rot(Z, t)
-        P = ptens(x)
+        P = ptensors(x)
         return P[0, 1] ** 2 + P[1, 0] ** 2
 
     xopt = scipy.optimize.fmin(offdiagsum, 0.1, disp=False)
@@ -457,8 +353,8 @@ def ptensaz(Z):
         angle2 -= 180
     logger.debug('ptensaz: after adjustment to first 2 quadrants=%f, %f' % (angle1, angle2))
 
-    ptens1 = ptens(rot(Z, angle1))
-    ptens2 = ptens(rot(Z, angle2))
+    ptens1 = ptensors(rot(Z, angle1))
+    ptens2 = ptensors(rot(Z, angle2))
     if ptens2[0, 0] > ptens1[0, 0]:
         return angle2
     else:
