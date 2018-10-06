@@ -288,11 +288,12 @@ def plot_ptensell(ptensors, freqs=None, scale=1, x0=0, y0=0, centre_dot=False,
         indices = range(0, len(ptensors), xlabstep)
         ax.set_xticks(indices)
         ax.set_xticklabels(map(lambda f: fmt % f, freqs[indices]))
-        plt.setp(ax.get_xticklabels(), rotation=rot, ha='right')
+        plt.setp(ax.get_xticklabels(), rotation='vertical', ha='right')
 
 
-def plot_ptensell_filled(ptensors, freqs=None, x0=0, y0=0,
+def plot_ptensell_filled(ptensors, freqs=None,
                          fillarr=None, cmap=plt.cm.spectral_r,
+                         x0=0, y0=0,
                          vmin=None, vmax=None,
                          facecolor='none', edgecolor='k',
                          fmt='%s', xlabstep=1,
@@ -328,8 +329,8 @@ def plot_ptensell_filled(ptensors, freqs=None, x0=0, y0=0,
         colours = [facecolor] * ptensors.shape[0]
     for pi in range(len(ptensors)):
         P = ptensors[pi]
-        pmax = adj_pmax(ptens_max(P))
-        pmin = adj_pmin(ptens_min(P))
+        pmax = adj_pmax(mt.ptens_max(P))
+        pmin = adj_pmin(mt.ptens_min(P))
         alpha = mt.ptens_alpha(P)
         beta = mt.ptens_beta(P)
 
@@ -337,14 +338,16 @@ def plot_ptensell_filled(ptensors, freqs=None, x0=0, y0=0,
             ec = colours[pi]
         else:
             ec = edgecolor
-        e = Ellipse((x0, y0), pmax*2, pmin*2, alpha-beta+extra_rotation,
+        x = x0 + pi
+        e = Ellipse((x, y0), pmax*2, pmin*2, alpha-beta+extra_rotation,
                     edgecolor=ec, facecolor=colours[pi], **plotkws)
         ax.add_artist(e)
+    ax.set_ylim(-1, 1)
     if not freqs is None:
         indices = range(0, len(ptensors), xlabstep)
         ax.set_xticks(indices)
         ax.set_xticklabels(map(lambda f: fmt % f, freqs[indices]))
-        plt.setp(ax.get_xticklabels(), rotation=rot, ha='right')
+        plt.setp(ax.get_xticklabels(), rotation='vertical', ha='right')
 
 
 def animate_ptens(P, fign=1, clf=True, pngs_path=None, axes='math'):
@@ -535,12 +538,14 @@ def plot_mohr_ptensor(ptensors, freqs, cmap=plt.cm.jet, ax=None, fig=None, fign=
             fig.clf()
         ax = fig.add_subplot(111, aspect='equal')
     angles = np.linspace(0, np.pi * 1.0, 50)
+    
     for fi, freq in enumerate(freqs):
         p = ptensors[fi]
+        L = mt.L(p)
         c = cmap(float(fi) / len(freqs))
-        ax.plot([t11b(p, a) for a in angles], [t12b(p, a) for a in angles], color=c)
-        ax.plot([L(p).t1, z11b(p, 0)], [L(p).t4, z12b(p, 0)], ls='-', color=c)
-        ax.plot(L(p).t1, L(p).t4, marker='o', mfc=c, mec=c)
+        ax.plot([mt.t11b(p, a) for a in angles], [mt.t12b(p, a) for a in angles], color=c)
+        ax.plot([L.t1, mt.z11b(p, 0)], [L.t4, mt.z12b(p, 0)], ls='-', color=c)
+        ax.plot(L.t1, L.t4, marker='o', mfc=c, mec=c)
         ax.axvline(0, color='gray')
         ax.axhline(0, color='gray')
     legreal = ax.legend(['%s Hz' % freqs[0], '%s Hz' % freqs[-1]], loc=2, numpoints=1)
