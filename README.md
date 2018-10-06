@@ -15,5 +15,5 @@ $ pip install mtwaffle
 
 Requirements: numpy, scipy, matplotlib
 
-See the [quickstart tutorial](https://github.com/kinverarity1/mtwaffle/blob/master/notebooks/Quickstart%20tutorial.ipynb) Jupyter notebook to get started.
+See the [quickstart tutorial](https://github.com/kinverarity1/mtwaffle/blob/master/notebooks/Quickstart%20tutorial.ipynb) Jupyter notebook to get started. There are other tutorials in the [notebooks folder](https://github.com/kinverarity1/mtwaffle/blob/master/notebooks).
 
