@@ -94,6 +94,3 @@ docs/_build/
 
 # PyBuilder
 target/
-
-# bumpversion
-.bumpversion.cfg
