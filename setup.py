@@ -1,43 +1,15 @@
-'''Setup script for mtwaffle
-
-Based on:
-https://packaging.python.org/en/latest/distributing.html
-https://github.com/pypa/sampleproject
-
-'''
-
-# Always prefer setuptools over distutils
-from setuptools import setup, find_packages
-# To use a consistent encoding
-from codecs import open
-from os import path
-
-from distutils.core import setup
-
-with open(os.path.join(os.path.dirname(__file__), 'mtwaffle', '__version__.py'), 'r') as f:
-    exec(f.read())
-
-with open(path.join(path.dirname(__file__), 'requirements.txt'), 'r') as f:
-    requirements = f.read().splitlines()
-
-with open(path.join(path.dirname(__file__), 'README.md'), 'r') as f:
-    README = f.read()
+'''Setup script for mtwaffle'''
+from setuptools import setup
 
 setup(
     name='mtwaffle',
-
-    version=__version__,
-
+    version='0.3',
     description='Magnetotelluric data analysis',
-    long_description=README,
-
+    long_description=open('README.md').read(),
     url='https://github.com/kinverarity1/mtwaffle',
-
     author='Kent Inverarity',
     author_email='kinverarity@hotmail.com',
-
     license='MIT',
-
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Console',
@@ -56,16 +28,7 @@ setup(
         'Topic :: System :: Filesystems',
         'Topic :: Scientific/Engineering :: Information Analysis',
     ],
-
     keywords='science geophysics',
-
     packages=['mtwaffle', ],
-
-    install_requires=requirements,
-
-    entry_points={
-        'console_scripts': [
-            # 'mtrfviewer = mtwaffle.rfviewer:main',
-        ],
-    }
-    )
+    install_requires=['numpy', 'scipy', 'matplotlib', 'attrdict'],
+)
