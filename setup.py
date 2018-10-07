@@ -25,6 +25,7 @@ setup(
         'Operating System :: OS Independent',
         'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
         'Topic :: Scientific/Engineering',
         'Topic :: System :: Filesystems',
         'Topic :: Scientific/Engineering :: Information Analysis',
