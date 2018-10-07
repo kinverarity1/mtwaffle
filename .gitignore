@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 *.py[cod]
 
 # C extensions
@@ -37,7 +36,7 @@ docs/test*
 .mr.developer.cfg
 .project
 .pydevproject
-=======
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -95,4 +94,6 @@ docs/_build/
 
 # PyBuilder
 target/
->>>>>>> 55eeffdc09f6de48474f3867801ab6563fbf86ab
+
+# bumpversion
+.bumpversion.cfg
