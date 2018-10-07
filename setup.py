@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name='mtwaffle',
-    version='0.3',
+    version='0.4',
     description='Magnetotelluric data analysis',
     long_description=open('README.md').read(),
     url='https://github.com/kinverarity1/mtwaffle',
