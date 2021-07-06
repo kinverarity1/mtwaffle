@@ -292,7 +292,7 @@ def plot_ptensell(ptensors, freqs=None, scale=1, x0=0, y0=0, centre_dot=False,
 
 
 def plot_ptensell_filled(ptensors, freqs=None,
-                         fillarr=None, cmap=plt.cm.spectral_r,
+                         fillarr=None, cmap=plt.cm.get_cmap('Spectral_r'),
                          x0=0, y0=0,
                          vmin=None, vmax=None,
                          facecolor='none', edgecolor='k',
